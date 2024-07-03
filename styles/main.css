@@ -1,0 +1,56 @@
+#input {
+    width: 400px;
+    height: 100px;
+}
+
+#calendar {
+    width: 1600px;
+    height: 980px;
+}
+
+.fc-timegrid-slot {
+    height: 2.2em !important;
+}
+
+.class-container {
+    display: flex;
+    flex-direction: column;
+    padding: 0px 2px;
+    font-size: small;
+    font-family: "Open Sans", sans-serif;
+
+    >* {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.class-title {
+    font-weight: bold;
+}
+
+.class-desc {
+    font-weight: normal;
+}
+
+.class-walk {
+    margin-right: 3px;
+}
+
+.class-loc {
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.side-by-side {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+
+    > * {
+        margin-right: 20px;
+    }
+}
