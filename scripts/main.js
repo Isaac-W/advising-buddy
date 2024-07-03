@@ -41,41 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('schedule-title').textContent = "Schedule";
         }
 
-        // Check off items in checklist
-        let checkItems = processChecklist(input);
-        checkItems = [
-            {
-                "item": "Credits",
-                "value": "10",
-                "status": "🛑",
-                "message": "Need 12 credits to be full-time",
-            },
-            {
-                "item": "Credits",
-                "value": "13",
-                "status": "⚠️",
-                "message": "Need 15 credits to graduate on time",
-            },
-            {
-                "item": "CS Course",
-                "value": "CS 149",
-                "status": "✅",
-                "message": "",
-            },
-            {
-                "item": "CS Course",
-                "value": "MATH 155",
-                "status": "✅",
-                "message": "Based on ALEKS score",
-            },
-            {
-                "item": "MATH Course",
-                "value": "none",
-                "status": "⚠️",
-                "message": "Recommend MATH 235 to stay on track",
-            }
-        ];
+        // Parse events
+        const [allEvents, allClasses] = parseEvents(input);
+
         // Populate checklist items
+        let checkItems = processChecklist(input, allClasses);
+        
         let checklist = document.getElementById('checklist-items');
         checklist.innerHTML = "";
         for (const item of checkItems) {
@@ -105,9 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             checklist.appendChild(li);
         }
-
-        // Parse events
-        const allEvents = parseEvents(input);
 
         // Create calendar
         const calendarEl = document.getElementById('calendar');

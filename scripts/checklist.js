@@ -182,6 +182,257 @@ const labReq = {
     "ANTH196": "ANTH196L",
 }
 
-function processChecklist(text) {
+const mathPlacement = {
+    55: ["MATH155"],
+    65: ["MATH231", "MATH199"],
+    80: ["MATH231"],
+    100: ["MATH235"],
+}
+
+function getMathPlacement(aleks) {
+    for (const score in mathPlacement) {
+        if (aleks <= score) {
+            return mathPlacement[score];
+        }
+    }
+    return [];
+
+}
+
+function processChecklist(text, classes) {
+    /*
+    Classes has format:
+    [{
+        id: "CS149",
+        name: "Introduction to Programming",
+        credits: 3,
+        section: "4",
+        days: "MWF",
+        start: "11:00",
+        end: "11:50",
+        location: "King Hall 248",
+        region: "Skyline",
+    }, ...]
+    */
+
+    let classIds = classes.map(c => c.id);
+
+    let items = [];
+
+    let aleks = getALEKS(text);
+    let math = getMathPlacement(aleks);
+    let transfer = getTransfer(text);
     
+    items.push(checkCredits(text));
+    items.push(checkAleks(aleks));
+    items.push(checkMinor(text));
+    items.push(checkCS(aleks, transfer, classIds));
+    items.push(checkMath(aleks, math, transfer, classIds));
+    items.push(checkFoundations(transfer, classIds));
+
+    return items;
+}
+
+function getALEKS(text) {
+    const pattern = /ALEKS Math Assessment Score (\d+)/;
+    const match = text.match(pattern);
+    return parseInt(match[1]);
+}
+
+function checkAleks(aleks) {
+    let status = "☑️";
+    let message = "";
+
+    if (aleks > 60 && aleks < 66) {
+        status = "👉";
+        message = "Consider retaking ALEKS to get into CS 149";
+    }
+
+    return { "item": "ALEKS", "value": aleks, "status": status, "message": message };
+}
+
+function getTransfer(text) {
+    const pattern = /(\w+)-\d+ units via (?:(?:transfer)|(?:test)) credit/gm;
+    const matches = text.matchAll(pattern);
+    let transfer = [];
+    for (const match of matches) {
+        transfer.push(match[1]);
+    }
+    return transfer;
+}
+
+function getCredits(text) {
+    const pattern = /Total of (\d+) credit hours/;
+    const match = text.match(pattern);
+    return parseInt(match[1]);
+}
+
+function checkCredits(text) {
+    const credits = getCredits(text);
+
+    let status = "☑️";
+    let message = "";
+
+    if (credits < 12) {
+        status = "🚫";
+        message = "Need 12 credits to be full-time";
+    } else if (credits < 14) {
+        status = "⚠️";
+        message = "Need ~15 credits to graduate on time";
+    } else if (credits > 18) {
+        status = "🚫";
+        message = "Over credit limit";
+    } else if (credits > 17) {
+        status = "⚠️";
+        message = "High credit load";
+    }
+
+    return { "item": "Credits", "value": credits, "status": status, "message": message };
+}
+
+function getMinor(text) {
+    const pattern = /Minor: ?(.*)\n?Email/;
+    const match = text.match(pattern);
+    return match[1];
+}
+
+function checkMinor(text) {
+    let minor = getMinor(text);
+    
+    let status = "☑️";
+    let message = "";
+
+    if (minor === "") {
+        minor = "none";
+    } else {
+        status = "👉";
+        message = "Check minor requirements";
+    }
+
+    return { "item": "Minor", "value": minor, "status": status, "message": message };
+}
+
+function findMissingCourses(required, classIds) {
+    let missing = [];
+    for (const course of required) {
+        if (!classIds.some(c => c === course)) {
+            missing.push(course);
+        }
+    }
+    return missing;
+}
+
+function checkCS(aleks, transfer, classIds) {
+    let status = "☑️";
+    let course = "CS149";
+    let message = "";
+
+    if (aleks < 66) { // Unable to take CS 149
+        status = "👉";
+        course = "Need to take MATH course instead of CS149";
+    } else { // Check for CS 149
+        // Check transfer credit for CS 149
+        if (transfer.includes("CS149")) {
+            course = "CS159 + CS227";
+            message = "Transfer credit for CS149";
+
+            let needed = findMissingCourses(["CS159", "CS227"], classIds);
+            if (needed.length > 0) {
+                status = "🚫";
+                course = needed.join(" + ");
+                message = `Need to take; has credit for CS149`;
+            }
+        } else if (!classIds.some(c => c === "CS149")) {
+            status = "🚫";
+            message = "Need to take";
+        }
+    }
+
+    return { "item": "CS Course", "value": course, "status": status, "message": message };
+}
+
+function checkMath(aleks, math, transfer, classIds) {
+    let status = "☑️";
+    let course = math.join(" + ");
+    let message = ``;
+    
+    let needed = findMissingCourses(math, classIds);
+    if (needed.length > 0) {
+        // Check if has transfer credit for missing course(s)
+        let missingAfterTransfer = needed.filter(m => !transfer.includes(m));
+        
+        if (missingAfterTransfer.length > 0) {
+            course = missingAfterTransfer.join(" + ");
+
+            if (aleks < 66) {
+                status = "🚫";
+                message = `Need to take`;
+            } else {
+                status = "⚠️";
+                message = `Recommend taking to stay on track`;
+            }
+        } else {
+            status = "☑️";
+            message = `Has transfer credit`;
+        }
+    } else {
+        // Double-check for duplicate courses based on transfer credit
+        let duplicate = math.filter(m => transfer.includes(m));
+        if (duplicate.length > 0) {
+            status = "🚫";
+            course = duplicate.join(" + ");
+            message = `Duplicate transfer credit`;
+        }
+    }
+
+    return { "item": `MATH Course`, "value": course, "status": status, "message": message };
+}
+
+function getGenEdCourses(requirements, classIds) {
+    let result = {};
+    for (const id of classIds) {
+        console.log(id)
+        if (id in classLookup) {
+            let x = classLookup[id];
+            if (requirements.includes(classLookup[id])) {
+                result[classLookup[id]] = id;
+            }
+        }
+    }
+    return result;
+}
+
+function checkFoundations(transfer, classIds) {
+    let status = "☑️";
+    let courses = [];
+    let message = "";
+
+    let foundations = genEdAreas["Madison Foundations"];
+    let taking = getGenEdCourses(foundations, classIds);
+    let transferred = getGenEdCourses(foundations, transfer);
+    
+    courses = Object.entries(taking).map(([area, course]) => `${area}: ${course}`);
+    if (courses.length === 0) {
+        courses = ["none"];
+    }
+
+    let satisfied = {...taking, ...transferred};
+    let count = Object.keys(satisfied).length;
+
+    if (count === 0) {
+        status = "🚫";
+        message = `Need to take Madison Foundations`;
+    } else if (count === 1) {
+        // Make sure progress is made towards C1CT or C1HC if only one course taken
+        if ("C1W" in satisfied) {
+            status = "🚫";
+            message = `Need C1CT or C1HC to finish on-time`;
+        }
+    } else {
+        if (Object.keys(transferred).length > 0) {
+            message = `Transfer credit for ${Object.keys(transferred).join(", ")}`;
+        }
+    }
+
+    return { "item": "Madison Foundations", "value": courses.join(", "), "status": status, "message": message };
 }

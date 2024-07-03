@@ -86,7 +86,7 @@ h2 {
     padding: 2px 5px;
     border: 1px solid #ccc;
     width: max-content;
-    min-width: 500px;
+    min-width: 400px;
     justify-self: end;
 }
 
@@ -97,7 +97,7 @@ h2 {
 }
 
 .checklist-status {
-    margin-right: 10px;
+    margin-right: 8px;
 }
 
 .checklist-item {
@@ -106,7 +106,7 @@ h2 {
 }
 
 .checklist-value {
-    margin-right: 10px;
+    margin-right: 8px;
 }
 
 .checklist-message {

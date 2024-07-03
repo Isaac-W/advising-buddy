@@ -32,7 +32,7 @@ const timeEstimates = {
         "hillside": "✅",
         "lakeside": "⚠️",
         "skyline": "⚠️",
-        "ridge": "🛑",
+        "ridge": "🚫",
         "online": "✅",
     },
     "memorial": {
@@ -41,9 +41,9 @@ const timeEstimates = {
         "memorial": "✅",
         "n.campus": "✅",
         "hillside": "✅",
-        "lakeside": "🛑",
-        "skyline": "🛑",
-        "ridge": "🛑",
+        "lakeside": "🚫",
+        "skyline": "🚫",
+        "ridge": "🚫",
         "online": "✅",
     },
     "n.campus": {
@@ -70,7 +70,7 @@ const timeEstimates = {
     "lakeside": {
         "bluestone": "✅",
         "w.bluestone": "⚠️",
-        "memorial": "🛑",
+        "memorial": "🚫",
         "n.campus": "⚠️",
         "hillside": "✅",
         "lakeside": "✅",
@@ -81,7 +81,7 @@ const timeEstimates = {
     "skyline": {
         "bluestone": "⚠️",
         "w.bluestone": "⚠️",
-        "memorial": "🛑",
+        "memorial": "🚫",
         "n.campus": "⚠️",
         "hillside": "⚠️",
         "lakeside": "⚠️",
@@ -91,8 +91,8 @@ const timeEstimates = {
     },
     "ridge": {
         "bluestone": "⚠️",
-        "w.bluestone": "🛑",
-        "memorial": "🛑",
+        "w.bluestone": "🚫",
+        "memorial": "🚫",
         "n.campus": "⚠️",
         "hillside": "⚠️",
         "lakeside": "⚠️",
@@ -136,7 +136,7 @@ function canIGetThere(source, destination) {
 // EVENTS
 
 // const eventPattern = /(?<id>\w+)-0*(?<section>\d+)-(?<name>.+)\n(?<credits>\d+)\n(?<days>\w*)\n?(?<start>[0-9.]*)-(?<end>[0-9.]*)(?: |\n)(?<location>.+)/gm // Original, with only newlines
-const eventPattern = /(?<id>\w+)-0*(?<section>\d+)-(?<name>.+?)(?:\n| )(?<credits>\d+)(?:\n| )(?<days>\w*)(?:\n| )?(?<start>[0-9.]*)-(?<end>[0-9.]*)(?:\n| )(?<location>.+)/gm; // Updated, with optional spaces
+const eventPattern = /(?<id>\w+)-0*(?<section>\w+)-(?<name>.+?)(?:\n| )(?<credits>\d+)(?:\n| )(?<days>\w*)(?:\n| )?(?<start>[0-9.]*)-(?<end>[0-9.]*)(?:\n| )(?<location>.+)/gm; // Updated, with optional spaces
 const namePattern = /Student: (?<last>[^0-9,]+),(?<first>[^0-9]+)/m;
 const startDate = Date.parse("2024-01-01");
 
@@ -178,15 +178,36 @@ function toTitleCase(str) {
 // Parse events from input text using RegEx
 function parseEvents(text) {
     let events = [];
-    let matches = text.matchAll(eventPattern);
+    let classes = [];
 
+    let matches = text.matchAll(eventPattern);
     for (const match of matches) {
         const parsed = match.groups;
+        const classData = getClassData(parsed);
         const newEvents = buildEvents(parsed);
         events = events.concat(newEvents);
+        classes.push(classData);
     }
 
-    return events;
+    addWalkabilityToList(events);
+    return [events, classes];
+}
+
+function getClassData(parsed) {
+    let classData = {
+        id: parsed.id.endsWith("H") ? parsed.id.slice(0, -1) : parsed.id,
+        honors: parsed.id.endsWith("H"),
+        full_id: parsed.id,
+        name: parsed.name,
+        credits: parseInt(parsed.credits),
+        section: parsed.section, // Section may not always be a number (e.g. "OP01")
+        days: parsed.days,
+        start: parsed.start.replace(".", ":"),
+        end: parsed.end.replace(".", ":"),
+        location: parsed.location,
+        region: getRegion(parsed.location),
+    }
+    return classData;
 }
 
 // Build events from parsed RegEx data
@@ -236,12 +257,11 @@ function buildEvents(parsed) {
     let events = [];
     for (const day of days) {
         let newEvent = { ...event };
-        newEvent.extendedProps = { ...event.extendedProps }; // Also deep copy extendedProps
+        newEvent.extendedProps = { ...event.extendedProps }; // Also deep copy extendedProps (for walkability checks)
         newEvent.daysOfWeek = [day];
         events.push(newEvent);
     }
 
-    addWalkabilityToList(events);
     return events;
 }
 
