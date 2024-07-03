@@ -322,29 +322,45 @@ function findMissingCourses(required, classIds) {
     return missing;
 }
 
+function getSatisfiedCourses(required, classIds) {
+    let satisfied = [];
+    let missing = [];
+    for (const course of required) {
+        if (classIds.some(c => c === course)) {
+            satisfied.push(course);
+        } else {
+            missing.push(course);
+        }
+    }
+    return [satisfied, missing];
+}
+
 function checkCS(aleks, transfer, classIds) {
     let status = "☑️";
-    let course = "CS149";
+    let course = "none";
     let message = "";
 
-    if (aleks < 66) { // Unable to take CS 149
+    if (aleks < 66) {
         status = "👉";
         course = "Need to take MATH course instead of CS149";
     } else { // Check for CS 149
-        // Check transfer credit for CS 149
-        if (transfer.includes("CS149")) {
-            course = "CS159 + CS227";
-            message = "Transfer credit for CS149";
+        if (transfer.includes("CS149")) { // Check transfer credit for CS 149
+            let needed = getSatisfiedCourses(["CS159", "CS227"], classIds)[1];
+            let taking = getSatisfiedCourses(["CS149", "CS159", "CS227"], classIds)[0];
+            
+            course = taking.length ? taking.join(", ") : "none";
 
-            let needed = findMissingCourses(["CS159", "CS227"], classIds);
             if (needed.length > 0) {
-                status = "🚫";
-                course = needed.join(" + ");
-                message = `Need to take; has credit for CS149`;
+                status = "⚠️";
+                message = `Need to take ${needed.join(" + ")}; has credit for CS149`;
+            } else {
+                message = "Has credit for CS149";
             }
-        } else if (!classIds.some(c => c === "CS149")) {
+        } else if (classIds.includes("CS149")) {
+            course = "CS149";
+        } else {
             status = "🚫";
-            message = "Need to take";
+            message = "Need to take CS149";
         }
     }
 
@@ -411,11 +427,13 @@ function checkFoundations(transfer, classIds) {
     let taking = getGenEdCourses(foundations, classIds);
     let transferred = getGenEdCourses(foundations, transfer);
     
+    // Determine courses currently taking
     courses = Object.entries(taking).map(([area, course]) => `${area}: ${course}`);
     if (courses.length === 0) {
         courses = ["none"];
     }
 
+    // Combine taking and transferred courses
     let satisfied = {...taking, ...transferred};
     let count = Object.keys(satisfied).length;
 
