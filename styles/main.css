@@ -1,5 +1,9 @@
+body {
+    font-family: "Open Sans", sans-serif;
+}
+
 #input {
-    width: 400px;
+    width: 450px;
     height: 100px;
 }
 
@@ -12,12 +16,21 @@
     height: 2.2em !important;
 }
 
+.fc-header-toolbar {
+    display: none !important;
+}
+
+h2 {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin: 2px 0;
+}
+
 .class-container {
     display: flex;
     flex-direction: column;
     padding: 0px 2px;
     font-size: small;
-    font-family: "Open Sans", sans-serif;
 
     >* {
         overflow: hidden;
@@ -45,12 +58,57 @@
     white-space: nowrap;
 }
 
-.side-by-side {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-start;
+#buttons {
+    margin: 5px 0px;
+}
 
-    > * {
-        margin-right: 20px;
-    }
+#schedule {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+        "a b"
+        "c c";
+    width: max-content;
+}
+
+#schedule-title {
+    grid-area: a;
+    align-self: center;
+}
+
+#calendar {
+    grid-area: c;
+}
+
+#checklist {
+    grid-area: b;
+    margin-bottom: 10px;
+    padding: 2px 5px;
+    border: 1px solid #ccc;
+    width: max-content;
+    min-width: 500px;
+    justify-self: end;
+}
+
+#checklist-items {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.checklist-status {
+    margin-right: 10px;
+}
+
+.checklist-item {
+    margin-right: 4px;
+    font-weight: 600;
+}
+
+.checklist-value {
+    margin-right: 10px;
+}
+
+.checklist-message {
+    font-style: italic;
 }

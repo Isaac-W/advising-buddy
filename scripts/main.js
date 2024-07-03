@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear button handler
     document.getElementById('clear-btn').addEventListener('click', (ev) => {
         // Hide schedule
-        document.getElementById('schedule').hidden = true;
+        document.getElementById('results').hidden = true;
 
         // Clear input
         let input = document.getElementById('input');
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Submit button handler
     document.getElementById('submit-btn').addEventListener('click', (ev) => {
         ev.preventDefault();
-        document.getElementById('schedule').hidden = false;
+        document.getElementById('results').hidden = false;
 
         const input = document.getElementById('input').value;
         sessionStorage.setItem('input', input);
@@ -42,11 +42,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Check off items in checklist
-        processChecklist(input);
+        let checkItems = processChecklist(input);
+        checkItems = [
+            {
+                "item": "Credits",
+                "value": "10",
+                "status": "🛑",
+                "message": "Need 12 credits to be full-time",
+            },
+            {
+                "item": "Credits",
+                "value": "13",
+                "status": "⚠️",
+                "message": "Need 15 credits to graduate on time",
+            },
+            {
+                "item": "CS Course",
+                "value": "CS 149",
+                "status": "✅",
+                "message": "",
+            },
+            {
+                "item": "CS Course",
+                "value": "MATH 155",
+                "status": "✅",
+                "message": "Based on ALEKS score",
+            },
+            {
+                "item": "MATH Course",
+                "value": "none",
+                "status": "⚠️",
+                "message": "Recommend MATH 235 to stay on track",
+            }
+        ];
+        // Populate checklist items
+        let checklist = document.getElementById('checklist-items');
+        checklist.innerHTML = "";
+        for (const item of checkItems) {
+            let li = document.createElement('li');
+            
+            let status = document.createElement('span');
+            status.classList.add('checklist-status');
+            status.textContent = item.status;
+            li.appendChild(status);
+
+            let itemText = document.createElement('span');
+            itemText.classList.add('checklist-item');
+            itemText.textContent = `${item.item}:`;
+            li.appendChild(itemText);
+
+            let value = document.createElement('span');
+            value.classList.add('checklist-value');
+            value.textContent = item.value;
+            li.appendChild(value);
+
+            if (item.message) {
+                let message = document.createElement('span');
+                message.classList.add('checklist-message');
+                message.textContent = `(${item.message})`;
+                li.appendChild(message);
+            }
+
+            checklist.appendChild(li);
+        }
 
         // Parse events
         const allEvents = parseEvents(input);
-        addWalkabilityToList(allEvents);
 
         // Create calendar
         const calendarEl = document.getElementById('calendar');
@@ -69,18 +130,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         calendar.render();
 
-        window.scrollTo(0, document.getElementById('schedule').offsetTop);
+        window.scrollTo(0, document.getElementById('results').offsetTop - 10);
     });
 
     // Copy button handler
     document.getElementById('copy-btn').addEventListener('click', () => {
-        // Hide copy button and top section
-        let btn = document.getElementById('buttons');
-        btn.hidden = true;
-
-        let schedule = document.getElementById('schedule');
+        let results = document.getElementById('schedule');
         let calendar = document.getElementById('calendar');
-        html2canvas(schedule, {
+        html2canvas(results, {
             scale: 2,
             windowWidth: calendar.scrollWidth + 20,
         }).then(canvas => {
@@ -92,17 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     })
                 ]);
             });
-
-            btn.hidden = false;
         });
     });
 
     // Download button handler
     document.getElementById('download-btn').addEventListener('click', () => {
-        // Hide download button and top section
-        let btn = document.getElementById('buttons');
-        btn.hidden = true;
-
         let schedule = document.getElementById('schedule');
         let calendar = document.getElementById('calendar');
         html2canvas(schedule, {
@@ -116,8 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             link.download = `${document.getElementById('schedule-title').textContent}.png`;
             link.href = imgData;
             link.click();
-
-            btn.hidden = false;
         });
     });
 
@@ -127,3 +176,46 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('input').value = prevInput;
     }
 });
+
+// Custom event rendering callback
+function renderEvent(arg) {
+    let event = arg.event;
+
+    let container = document.createElement('div');
+    container.classList.add('class-container');
+
+    // Title and time
+    let title = document.createElement('div');
+    title.classList.add('class-title');
+    title.textContent = event.title + " @ " + (event.extendedProps.displayTime ? event.extendedProps.displayTime : "Async");
+    container.appendChild(title);
+
+    // Description
+    let description = document.createElement('div');
+    description.classList.add('class-desc');
+    description.textContent = toTitleCase(event.extendedProps.name);
+    container.appendChild(description);
+
+    // Location and walkability
+    let miniContainer = document.createElement('div');
+    miniContainer.style.display = "flex";
+    miniContainer.style.flexDirection = "row";
+
+    if (event.extendedProps.location === "Online") { // Don't show walkability for online classes
+        miniContainer.textContent = "Online";
+        miniContainer.classList.add('class-loc');
+    } else {
+        let walkability = document.createElement('span');
+        walkability.classList.add('class-walk');
+        walkability.textContent = event.extendedProps.walkability;
+        miniContainer.appendChild(walkability);
+
+        let location = document.createElement('span');
+        location.classList.add('class-loc');
+        location.textContent = `${toTitleCase(event.extendedProps.region)}: ${event.extendedProps.location}`;
+        miniContainer.appendChild(location);
+    }
+    container.appendChild(miniContainer);
+
+    return { domNodes: [container] };
+}

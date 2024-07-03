@@ -241,50 +241,8 @@ function buildEvents(parsed) {
         events.push(newEvent);
     }
 
+    addWalkabilityToList(events);
     return events;
-}
-
-// Custom event rendering callback
-function renderEvent(arg) {
-    let event = arg.event;
-
-    let container = document.createElement('div');
-    container.classList.add('class-container');
-
-    // Title and time
-    let title = document.createElement('div');
-    title.classList.add('class-title');
-    title.textContent = event.title + " @ " + (event.extendedProps.displayTime ? event.extendedProps.displayTime : "Async");
-    container.appendChild(title);
-
-    // Description
-    let description = document.createElement('div');
-    description.classList.add('class-desc');
-    description.textContent = toTitleCase(event.extendedProps.name);
-    container.appendChild(description);
-
-    // Location and walkability
-    let miniContainer = document.createElement('div');
-    miniContainer.style.display = "flex";
-    miniContainer.style.flexDirection = "row";
-
-    if (event.extendedProps.location === "Online") { // Don't show walkability for online classes
-        miniContainer.textContent = "Online";
-        miniContainer.classList.add('class-loc');
-    } else {
-        let walkability = document.createElement('span');
-        walkability.classList.add('class-walk');
-        walkability.textContent = event.extendedProps.walkability;
-        miniContainer.appendChild(walkability);
-
-        let location = document.createElement('span');
-        location.classList.add('class-loc');
-        location.textContent = `${toTitleCase(event.extendedProps.region)}: ${event.extendedProps.location}`;
-        miniContainer.appendChild(location);
-    }
-    container.appendChild(miniContainer);
-
-    return { domNodes: [container] };
 }
 
 // Get events by day of week (ignoring online/allDay classes), sorted by start time

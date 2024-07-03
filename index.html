@@ -16,40 +16,30 @@
 <body>
     <div id="top">
         <!-- <h1>Schedule Checker</h1> -->
-        <div class="side-by-side">    
-            <form>
-                <h2>Paste advising record here:</h2>
-                <textarea id="input" class="textbox"></textarea>
-                <br>
-                <button id="submit-btn" type="submit">Submit</button>
-                <button id="clear-btn" type="button">Clear</button>
-            </form>
-            <div id="checklist" hidden>
-                <h3>Checklist</h3>
-                <ul>
-                    
-                </ul>
-            </div>
-        </div>
+        <form>
+            <h2 for="input">Paste advising record here:</h2>
+            <textarea id="input" class="textbox" placeholder="Advising Record"></textarea>
+            <br>
+            <button id="submit-btn" type="submit">Submit</button>
+            <button id="clear-btn" type="button">Clear</button>
+        </form>
         <br>
         <hr>
     </div>
-    <div id="schedule" hidden>
-        <h2 id="schedule-title">Schedule</h2>
+    <div id="results" hidden>
         <div id="buttons">
             <button id="copy-btn" type="button">Copy Image</button>
             <button id="download-btn" type="button">Download Image</button>
         </div>
-        <div id="calendar"></div>
+        <hr>
+        <div id="schedule">
+            <h1 id="schedule-title">Schedule</h1>
+            <div id="checklist">
+                <ul id="checklist-items"></ul>
+            </div>
+            <div id="calendar"></div>
+        </div>
     </div>
-    <script>
-        
-
-
-        
-
-        
-    </script>
 </body>
 
 </html>
