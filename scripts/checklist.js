@@ -312,16 +312,6 @@ function checkMinor(text) {
     return { "item": "Minor", "value": minor, "status": status, "message": message };
 }
 
-function findMissingCourses(required, classIds) {
-    let missing = [];
-    for (const course of required) {
-        if (!classIds.some(c => c === course)) {
-            missing.push(course);
-        }
-    }
-    return missing;
-}
-
 function getSatisfiedCourses(required, classIds) {
     let satisfied = [];
     let missing = [];
@@ -369,39 +359,38 @@ function checkCS(aleks, transfer, classIds) {
 
 function checkMath(aleks, math, transfer, classIds) {
     let status = "☑️";
-    let course = math.join(" + ");
-    let message = ``;
-    
-    let needed = findMissingCourses(math, classIds);
-    if (needed.length > 0) {
-        // Check if has transfer credit for missing course(s)
-        let missingAfterTransfer = needed.filter(m => !transfer.includes(m));
-        
-        if (missingAfterTransfer.length > 0) {
-            course = missingAfterTransfer.join(" + ");
+    let course = "none";
+    let message = "";
 
-            if (aleks < 66) {
-                status = "🚫";
-                message = `Need to take`;
-            } else {
-                status = "⚠️";
-                message = `Recommend taking to stay on track`;
-            }
+    let taking = getSatisfiedCourses(["MATH155", "MATH231", "MATH199", "MATH235"], classIds)[0];
+    course = taking.length ? taking.join(", ") : "none";
+    
+    let needed = getSatisfiedCourses(math, classIds)[1];
+    let [transferred, remaining] = getSatisfiedCourses(needed, transfer); // Check if has transfer credit for missing course(s)
+    needed = remaining;
+
+    if (needed.length > 0) {
+        if (aleks < 66) {
+            status = "🚫";
+            message = `Need to take ${needed.join(" + ")}`;
         } else {
-            status = "☑️";
-            message = `Has transfer credit`;
+            status = "⚠️";
+            message = `Need to take ${needed.join(" + ")} to stay on track`;
         }
     } else {
-        // Double-check for duplicate courses based on transfer credit
-        let duplicate = math.filter(m => transfer.includes(m));
-        if (duplicate.length > 0) {
-            status = "🚫";
-            course = duplicate.join(" + ");
-            message = `Duplicate transfer credit`;
+        if (transferred.length > 0) {
+            message = `Transfer credit for ${transferred.join(", ")}`;
         }
     }
 
-    return { "item": `MATH Course`, "value": course, "status": status, "message": message };
+    // Check for duplicate courses based on transfer credit
+    let duplicate = math.filter(m => transfer.includes(m) && taking.includes(m));
+    if (duplicate.length > 0) {
+        status = "⚠️";
+        message += (message ? "; " : "") + `Warning: duplicate transfer credit`;
+    }
+
+    return { "item": "MATH Course", "value": course, "status": status, "message": message };
 }
 
 function getGenEdCourses(requirements, classIds) {
