@@ -189,6 +189,134 @@ const mathPlacement = {
     100: ["MATH235"],
 }
 
+const testCredit = {
+    "AP 2-D ART AND DESIGN": [
+        { score: 4, courses: ["ART292"] },
+    ],
+    "AP 3-D ART AND DESIGN": [
+        { score: 4, courses: ["ART292"] },
+    ],
+    "AP AFRICAN AMERICAN STUDIES": [
+        { score: 4, courses: ["GNED142"] },
+        { score: 3, courses: ["AAAD000"] },
+    ],
+    "AP ART HISTORY": [
+        { score: 4, courses: ["ARTH206"] },
+    ],
+    "AP BIOLOGY": [
+        { score: 4, courses: ["BIO140", "BIO140L", "BIO150", "BIO150L"] },
+        { score: 3, courses: ["BIO140", "BIO140L"] },
+    ],
+    "AP CALCULUS AB": [
+        { score: 4, courses: ["MATH235"] },
+    ],
+    "AP CALCULUS AB SUBSCORE": [
+        { score: 4, courses: ["MATH235"] },
+    ],
+    "AP CALCULUS BC": [
+        { score: 4, courses: ["MATH235", "MATH236"] },
+    ],
+    "AP CHEMISTRY": [
+        { score: 4, courses: ["CHEM131", "CHEM131L", "CHEM132", "CHEM132L"] },
+        { score: 3, courses: ["CHEM120", "CHEM000"] },
+    ],
+    "AP CHINESE LANGUAGE AND CULTURE": [
+        { score: 3, courses: ["CHIN231"] },
+    ],
+    "AP COMPARATIVE GOVERNMENT": [
+        { score: 4, courses: ["POSC240"] },
+    ],
+    "AP COMPUTER SCIENCE A": [
+        { score: 5, courses: ["CS149"] },
+        { score: 3, courses: ["CS000"] },
+    ],
+    "AP COMPUTER SCIENCE PRINCIPLES": [
+        { score: 3, courses: ["CS000"] },
+    ],
+    "AP DRAWING": [
+        { score: 4, courses: ["ART292"] },
+    ],
+    "AP MICROECONOMICS": [
+        { score: 4, courses: ["ECON201"] },
+    ],
+    "AP MACROECONOMICS": [
+        { score: 4, courses: ["ECON200"] },
+    ],
+    "AP ENGLISH LANGUAGE AND COMPOSITION": [
+        { score: 4, courses: ["WRTC103"] },
+    ],
+    "AP ENGLISH LITERATURE AND COMPOSITION": [
+        { score: 5, courses: ["GNED123"] },
+    ],
+    "AP ENVIRONMENTAL SCIENCE": [
+        { score: 4, courses: ["GEOL115", "ISCI104", "ISAT000"] },
+        { score: 3, courses: ["ENVT101"] },
+    ],
+    "AP FRENCH LANGUAGE": [
+        { score: 3, courses: ["FR231"] },
+    ],
+    "AP FRENCH LITERATURE": [
+        { score: 3, courses: ["FR231"] },
+    ],
+    "AP HUMAN GEOGRAPHY": [
+        { score: 3, courses: ["GEOG200"] },
+    ],
+    "AP GERMAN LANGUAGE": [
+        { score: 3, courses: ["GER231"] },
+    ],
+    "AP UNITED STATES GOVERNMENT": [
+        { score: 4, courses: ["POSC225"] },
+    ],
+    "AP EUROPEAN HISTORY": [
+        { score: 3, courses: ["HIST000"] },
+    ],
+    "AP UNITED STATES HISTORY": [
+        { score: 4, courses: ["HIST225"] },
+    ],
+    "AP WORLD HISTORY": [
+        { score: 4, courses: ["HIST102"] },
+    ],
+    "AP ITALIAN LANGUAGE AND CULTURE": [
+        { score: 3, courses: ["ITAL231"] },
+    ],
+    "AP LATIN VERGIL": [
+        { score: 3, courses: ["LAT231"] },
+    ],
+    "AP MUSIC THEORY": [
+        { score: 5, courses: ["MUS143"] },
+    ],
+    "AP PHYSICS B": [
+        { score: 4, courses: ["PHYS140", "PHYS140L", "PHYS150", "PHYS150L"] },
+        { score: 3, courses: ["PHYS140", "PHYS140L"] },
+    ],
+    "AP PHYSICS C: MECHANICS": [
+        { score: 4, courses: ["PHYS240", "PHYS240L"] },
+        { score: 3, courses: ["PHYS140", "PHYS140L"] },
+    ],
+    "AP PHYSICS C: ELECTRICITY AND MAGNETISM": [
+        { score: 4, courses: ["PHYS250", "PHYS250L"] },
+        { score: 3, courses: ["PHYS150", "PHYS150L"] },
+    ],
+    "AP PHYSICS 1": [
+        { score: 3, courses: ["PHYS140", "PHYS140L"] },
+    ],
+    "AP PHYSICS 2": [
+        { score: 3, courses: ["PHYS150", "PHYS150L"] },
+    ],
+    "AP PSYCHOLOGY": [
+        { score: 4, courses: ["PSYC101"] },
+    ],
+    "AP SPANISH LANGUAGE": [
+        { score: 3, courses: ["SPAN231"] },
+    ],
+    "AP SPANISH LITERATURE": [
+        { score: 3, courses: ["SPAN231"] },
+    ],
+    "AP STATISTICS": [
+        { score: 4, courses: ["MATH220", "ISAT251"] },
+    ],
+}
+
 function getMathPlacement(aleks) {
     for (const score in mathPlacement) {
         if (aleks <= score) {
@@ -222,7 +350,12 @@ function processChecklist(text, classes) {
     let aleks = getALEKS(text);
     let math = getMathPlacement(aleks);
     let transfer = getTransfer(text);
-    
+    let ap = getAP(text);
+
+    console.log(`Transfer Credit: ${transfer}`);
+    console.log(`AP Credit: ${ap}`)
+    transfer = transfer.concat(ap); // Merge transfer and AP credit
+
     items.push(checkCredits(text));
     items.push(checkAleks(aleks));
     items.push(checkMinor(text));
@@ -259,6 +392,26 @@ function getTransfer(text) {
         transfer.push(match[1]);
     }
     return transfer;
+}
+
+function getAP(text) {
+    const pattern = /(?<test>AP .+) (?<score>\d+)/gm;
+    const matches = text.matchAll(pattern);
+    let courses = [];
+    for (const match of matches) {
+        let test = testCredit[match.groups.test.toUpperCase()];
+        if (test) {
+            for (const tier of test) {
+                if (match.groups.score >= tier.score) {
+                    courses = courses.concat(tier.courses);
+                    break;
+                }
+            }
+        } else {
+            console.log(`Could not find ${match.groups.test}`)
+        }
+    }
+    return courses;
 }
 
 function getCredits(text) {
@@ -298,7 +451,7 @@ function getMinor(text) {
 
 function checkMinor(text) {
     let minor = getMinor(text);
-    
+
     let status = "☑️";
     let message = "";
 
@@ -337,7 +490,7 @@ function checkCS(aleks, transfer, classIds) {
         if (transfer.includes("CS149")) { // Check transfer credit for CS 149
             let needed = getSatisfiedCourses(["CS159", "CS227"], classIds)[1];
             let taking = getSatisfiedCourses(["CS149", "CS159", "CS227"], classIds)[0];
-            
+
             course = taking.length ? taking.join(", ") : "none";
 
             if (needed.length > 0) {
@@ -364,7 +517,7 @@ function checkMath(aleks, math, transfer, classIds) {
 
     let taking = getSatisfiedCourses(["MATH155", "MATH231", "MATH199", "MATH235"], classIds)[0];
     course = taking.length ? taking.join(", ") : "none";
-    
+
     let needed = getSatisfiedCourses(math, classIds)[1];
     let [transferred, remaining] = getSatisfiedCourses(needed, transfer); // Check if has transfer credit for missing course(s)
     needed = remaining;
@@ -414,7 +567,7 @@ function checkFoundations(transfer, classIds) {
     let foundations = genEdAreas["Madison Foundations"];
     let taking = getGenEdCourses(foundations, classIds);
     let transferred = getGenEdCourses(foundations, transfer);
-    
+
     // Determine courses currently taking
     courses = Object.entries(taking).map(([area, course]) => `${area}: ${course}`);
     if (courses.length === 0) {
@@ -422,7 +575,7 @@ function checkFoundations(transfer, classIds) {
     }
 
     // Combine taking and transferred courses
-    let satisfied = {...taking, ...transferred};
+    let satisfied = { ...taking, ...transferred };
     let count = Object.keys(satisfied).length;
 
     if (count === 0) {
