@@ -396,7 +396,6 @@ function checkMath(aleks, math, transfer, classIds) {
 function getGenEdCourses(requirements, classIds) {
     let result = {};
     for (const id of classIds) {
-        console.log(id)
         if (id in classLookup) {
             let x = classLookup[id];
             if (requirements.includes(classLookup[id])) {

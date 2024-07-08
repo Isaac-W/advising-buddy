@@ -66,6 +66,7 @@ const timeEstimates = {
         "lakeside": "✅",
         "skyline": "⚠️",
         "ridge": "⚠️",
+        "online": "✅",
     },
     "lakeside": {
         "bluestone": "✅",
@@ -225,7 +226,7 @@ function buildEvents(parsed) {
     }
 
     // Check if event has no start time (all day/online)
-    if (parsed.start === "") {
+    if (parsed.start === "" || parsed.start === parsed.end) {
         event.allDay = true;
         event.extendedProps.displayTime = "";
     } else {
