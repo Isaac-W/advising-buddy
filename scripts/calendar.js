@@ -136,7 +136,7 @@ function canIGetThere(source, destination) {
 
 // EVENTS
 
-const eventPattern = /(?<id>\w+)-0*(?<section>\w+)-(?<name>.+?)(?:\n| )(?<credits>\d+)(?:\n| )(?<days>\w*)(?:\n| )?(?<start>[0-9.]*)-(?<end>[0-9.]*) ?(?<location>.*)/gm;
+const eventPattern = /(?<id>\w+)-0*(?<section>\w+)-(?<name>.+?)(?:\n| )(?<credits>\d+)(?:\n| )(?<days>\w*)(?:\n| )?(?<start>[0-9.]*)-(?<end>[0-9.]*)(?:(?: ?(?!\nOnline))|\n)(?<location>.*)/gm
 const namePattern = /Student: (?<last>[^0-9,]+),(?<first>[^0-9]+)/m;
 const startDate = Date.parse("2024-01-01");
 
@@ -298,7 +298,11 @@ function addWalkabilityForDay(day) {
         let timeDiff = (new Date(`2024-01-01T${startTime}:00`) - new Date(`2024-01-01T${prevTime}:00`)) / 60000;
         // console.log(`Time diff: ${timeDiff} minutes`);
         if (timeDiff > 30) {
-            event.extendedProps.walkability = "✅";
+            if (location === "unknown") {
+                event.extendedProps.walkability = "❔";
+            } else {
+                event.extendedProps.walkability = "✅";
+            }
         } else {
             console.log(`Checking walkability between ${prevLocation} and ${location}: ${canIGetThere(prevLocation, location)}`)
             event.extendedProps.walkability = canIGetThere(prevLocation, location);

@@ -180,7 +180,7 @@ function renderEvent(arg) {
 
         let location = document.createElement('span');
         location.classList.add('class-loc');
-        location.textContent = `${toTitleCase(event.extendedProps.region)}: ${event.extendedProps.location}`;
+        location.textContent = `${toTitleCase(event.extendedProps.region)}${event.extendedProps.location ? ":" : ""} ${event.extendedProps.location}`;
         miniContainer.appendChild(location);
     }
     container.appendChild(miniContainer);
