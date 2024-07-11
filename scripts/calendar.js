@@ -136,8 +136,7 @@ function canIGetThere(source, destination) {
 
 // EVENTS
 
-// const eventPattern = /(?<id>\w+)-0*(?<section>\d+)-(?<name>.+)\n(?<credits>\d+)\n(?<days>\w*)\n?(?<start>[0-9.]*)-(?<end>[0-9.]*)(?: |\n)(?<location>.+)/gm // Original, with only newlines
-const eventPattern = /(?<id>\w+)-0*(?<section>\w+)-(?<name>.+?)(?:\n| )(?<credits>\d+)(?:\n| )(?<days>\w*)(?:\n| )?(?<start>[0-9.]*)-(?<end>[0-9.]*)(?:\n| )(?<location>.+)/gm; // Updated, with optional spaces
+const eventPattern = /(?<id>\w+)-0*(?<section>\w+)-(?<name>.+?)(?:\n| )(?<credits>\d+)(?:\n| )(?<days>\w*)(?:\n| )?(?<start>[0-9.]*)-(?<end>[0-9.]*) ?(?<location>.*)/gm;
 const namePattern = /Student: (?<last>[^0-9,]+),(?<first>[^0-9]+)/m;
 const startDate = Date.parse("2024-01-01");
 
