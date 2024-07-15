@@ -432,10 +432,10 @@ function checkCredits(text) {
     } else if (credits < 14) {
         status = "⚠️";
         message = "Need ~15 credits to graduate on time";
-    } else if (credits > 18) {
+    } else if (credits > 17) {
         status = "🚫";
         message = "Over credit limit";
-    } else if (credits > 17) {
+    } else if (credits > 16) {
         status = "⚠️";
         message = "High credit load";
     }
