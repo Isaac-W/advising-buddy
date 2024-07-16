@@ -1,16 +1,17 @@
 export default class Stateful {
     #state = {};
 
-    constructor() {
+    constructor(id=window.location.pathname) {
+        this.id = id;
         this.state = this.loadState();
     }
 
     loadState() {
-        return JSON.parse(localStorage.getItem(`state-${window.location.pathname}`)) || {};
+        return JSON.parse(localStorage.getItem(`state-${this.id}`)) || {};
     }
 
     saveState() {
-        localStorage.setItem(`state-${window.location.pathname}`, JSON.stringify(this.state));
+        localStorage.setItem(`state-${this.id}`, JSON.stringify(this.state));
     }
 
     getItem(key) {
