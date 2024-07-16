@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Schedule Checker - Calendar</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="https://fav.farm/📅">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf_viewer.min.css">
+    <style>
+        .toast-info {
+            background: #1874ff;
+        }
+
+        .toast-success {
+            background: #1fa81f;
+        }
+
+        .toast-warning {
+            background: #f8a100;
+        }
+
+        .toast-error {
+            background: #b83939;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">Advising Buddy</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Start</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="schedule.html">Schedule</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="geneds.html">GenEds</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="bg-body-tertiary p-5 rounded">
+            <h1>Upload Student Data</h1>
+            <p class="lead">Select your student data file, then click Upload to continue.</p>
+            <form>
+                <div class="mb-3">
+                    <label class="form-label" for="schedType">File Format</label>
+                    <select class="form-select" aria-label="Schedule Type" id="schedType" data-state="schedType">
+                        <option value="fya" selected>First Year Advising PDF</option>
+                        <option value="sa">Student Administration CSV</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="dataFile">Data File</label>
+                    <input type="file" class="form-control" id="dataFile">
+                </div>
+                <button type="submit" class="btn btn-primary" id="submitBtn">Submit</button>
+            </form>
+        </div>
+    </main>
+
+    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="loadingModalTitle">Please Wait</h1>                     
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.14/index.global.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script type="module">
+        import Stateful from "./scripts/stateful.mjs";
+        import { parsePdf } from "./scripts/fyaParser.mjs";
+        
+        const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
+            backdrop: "static",
+            // keyboard: false
+        });
+
+        let state = new Stateful();
+
+        function toast(message, type = "") {
+            Toastify({
+                text: message,
+                duration: 2500,
+                gravity: "top",
+                position: "center",
+                className: type ? `toast-${type}` : "",
+            }).showToast();
+        }
+
+        document.getElementById("submitBtn").addEventListener("click", function (e) {
+            e.preventDefault();
+
+            if (document.getElementById("dataFile").files.length === 0) {
+                toast("Please select a file to upload.", "error");
+                return;
+            }
+
+            const fileType = document.getElementById("schedType").value;
+
+            if (fileType === "fya") {
+                loadingModal.show();
+                parsePdf(document.getElementById("dataFile").files[0]).then((data) => {
+                    // TODO Save state and redirect?
+                    console.log(data);
+                }).finally(() => {
+                    setTimeout(() => {
+                        loadingModal.hide();
+                    }, 1000);
+                });
+            } else if (fileType === "sa") {
+                toast("Not yet implemented.");
+            } else {
+                toast("Invalid file type.", "error");
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            state.initialize();
+        });
+    </script>
+</body>
+
+</html>
