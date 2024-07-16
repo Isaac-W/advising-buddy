@@ -76,6 +76,8 @@ function parseStudentData(page) {
     const text = page.join("\n");
     const student = {};
 
+    student.id = parseId(text);
+    student.eid = parseEid(text);
     [student.firstName, student.lastName] = parseName(text);
     student.preferredName = parsePreferredName(text);
     student.schedule = parseClasses(text);
@@ -86,12 +88,25 @@ function parseStudentData(page) {
     student.ap = parseApTests(text);
     
     // Build additional student data
+    student.email = `${student.eid}@dukes.jmu.edu`;
     student.fullName = `${student.firstName} ${student.lastName}`;
     student.major = "Computer Science"; // Hardcoded
     student.classList = student.schedule.map(c => c.id)
         .filter((value, index, self) => self.indexOf(value) === index); // Only keep unique class IDs
 
     return student;
+}
+
+function parseId(text) {
+    const pattern = /(\d+) Advisor/;
+    const match = text.match(pattern);
+    return parseInt(match[1]);
+}
+
+function parseEid(text) {
+    const pattern = /Email: (.+)@/;
+    const match = text.match(pattern);
+    return match[1];
 }
 
 function parseName(text) {
