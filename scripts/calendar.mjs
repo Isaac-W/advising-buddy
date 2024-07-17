@@ -15,6 +15,7 @@ export function createCalendar(calendarEl) {
             center: "",
             end: ""
         },
+        height: "auto",
         slotMinTime: "08:00:00",
         slotMaxTime: "20:00:00",
         slotEventOverlap: false,
@@ -112,7 +113,7 @@ function lTrim(str, chars) {
 // Custom event rendering callback
 function renderEvent(arg) {
     const event = arg.event;
-    console.log(event)
+    
     const course = event.extendedProps.course;
     const region = event.extendedProps.region;
     const walkability = event.extendedProps.walkability;

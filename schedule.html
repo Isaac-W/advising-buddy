@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Schedule Checker</title>
+    <title>Schedule - Advising Buddy</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="https://fav.farm/📅">
@@ -11,11 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf_viewer.min.css">
     <link rel="stylesheet" href="styles/toast.css">
     <style>
-        #calendar {
-            min-width: 1600px;
-            height: 1000px;
-        }
-
         .fc-col-header-cell-cushion {
             color: black;
             text-decoration: none;
@@ -80,13 +75,13 @@
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
                     <li class="nav-item">
-                        <a class="nav-link" href="index.html">Start</a>
+                        <a id="start-link" class="nav-link" href="index.html">Start</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="schedule.html">Schedule</a>
+                        <a id="schedule-link" class="nav-link active" href="schedule.html">Schedule</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="geneds.html">GenEds</a>
+                        <a id="gened-link" class="nav-link" href="geneds.html">GenEds</a>
                     </li>
                 </ul>
             </div>
@@ -111,7 +106,7 @@
                 <button id="copy-btn" class="btn btn-primary" type="button">Copy Image</button>
                 <button id="download-btn" class="btn btn-secondary" type="button">Download Image</button>
             </div>
-            <div id="schedule">
+            <div id="schedule" class="mb-3">
                 <h1 id="schedule-title">Schedule</h1>
                 <div id="checklist">
                     <ul id="checklist-items"></ul>
@@ -152,46 +147,120 @@
             // keyboard: false
         });
 
+        //
+        //  Initialize state
+        //
+
+        const students = JSON.parse(localStorage.getItem("studentData") || "[]");
+        if (students.length === 0) {
+            toast("No student data found. Please upload student data.", "error");
+            window.location.href = "index.html";
+        }
+
+        //
+        //  Student selector
+        //
+
+        const studentSelect = document.getElementById("studentSelect");
+        students.forEach((student, index) => {
+            const option = document.createElement("option");
+            option.value = student.id;
+            option.textContent = student.fullName;
+            studentSelect.appendChild(option);
+        });
+
+        studentSelect.addEventListener("change", function (e) {
+            console.log("hi" + e.target.value);
+            const id = e.target.value;
+            updatePage(id);
+        });
+
+        const pageIds = ["gened-link"]
+        const pageLinks = pageIds.map(id => document.getElementById(id));
+
+        function updatePage(id, newPage = true) {
+            const student = students.find((student) => student.id == id);
+            if (!student) {
+                toast("Student not found.", "error");
+                console.log("yo" + id);
+                return;
+            }
+            console.log(student)
+
+            updateQueryString(id, newPage);
+            updateTitle(student);
+            updateLinks(id);
+
+            showSchedule(student);
+        }
+
+        function updateQueryString(id, addHistory = true) {
+            const url = new URL(window.location.href);
+            url.searchParams.set("id", id);
+
+            if (addHistory) {
+                window.history.pushState(null, "", url);
+            } else {
+                window.history.replaceState(null, "", url);
+            }
+        }
+
+        function updateTitle(student) {
+            document.title = `${student.preferredName}'s Schedule - Advising Buddy`;
+        }
+
+        function updateLinks(id) {
+            pageLinks.forEach(link => {
+                const url = new URL(link.href);
+                url.searchParams.set("id", id);
+                link.href = url.href;
+            });
+        }
+
+        //
+        //  Schedule
+        //
+
         const scheduleTitleEl = document.getElementById("schedule-title");
         const calendarEl = document.getElementById("calendar");
         const checklistEl = document.getElementById("checklist-items");
 
-        const state = new Stateful("advising");
+        const calendar = createCalendar(calendarEl);
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const students = JSON.parse(localStorage.getItem("studentData") || "[]");
-            if (students.length === 0) {
-                toast("No student data found. Please upload student data.", "error");
-                window.location.href = "index.html";
+        function showSchedule(student) {
+            scheduleTitleEl.textContent = `${student.preferredName}'s Schedule (${student.id})`;
+            calendar.displaySchedule(student);
+
+            // TODO Checklist
+        }
+
+        //
+        //  Load state
+        //
+
+        // Check if student ID is in query string
+        const url = new URL(window.location.href);
+        const studentId = url.searchParams.get("id");
+
+        if (studentId) {
+            studentSelect.value = studentId;
+        }
+
+        updatePage(studentSelect.value, false);
+
+        //
+        //  Manage history navigation
+        //
+
+        window.onpopstate = (e) => {
+            const url = new URL(window.location.href);
+            const studentId = url.searchParams.get("id");
+
+            if (studentId) {
+                studentSelect.value = studentId;
+                updatePage(studentId, false);
             }
-
-            const studentSelect = document.getElementById("studentSelect");
-            students.forEach((student, index) => {
-                const option = document.createElement("option");
-                option.value = student.id;
-                option.textContent = student.fullName;
-                studentSelect.appendChild(option);
-            });
-
-            state.initialize(); // Initialize state after populating student select
-
-            document.getElementById("studentSelect").addEventListener("change", function (e) {
-                const studentId = e.target.value;
-                const student = students.find((student) => student.id == studentId);
-                showSchedule(student);
-            });
-
-            const calendar = createCalendar(calendarEl);
-
-            // Trigger change event to load student
-            document.getElementById("studentSelect").dispatchEvent(new Event("change"));
-
-            function showSchedule(student) {
-                scheduleTitleEl.textContent = `${student.preferredName}'s Schedule (${student.id})`;
-
-                calendar.displaySchedule(student);
-            }
-        });
+        }
     </script>
 </body>
 
