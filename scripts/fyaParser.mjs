@@ -40,7 +40,7 @@ async function getText(page) {
 
 function getTextBoxes(textContent) {
     const textBoxes = [];
-    
+
     for (let item of textContent.items) {
         const x = item.transform[4];
         const y = item.transform[5];
@@ -74,19 +74,20 @@ function sortTextBoxes(textBoxes) {
 
 function parseStudentData(page) {
     const text = page.join("\n");
-    const student = {};
+    const student = {
+        id: parseId(text),
+        eid: parseEid(text),
+        preferredName: parsePreferredName(text),
+        schedule: parseClasses(text),
+        aleks: parseAleks(text),
+        credits: parseCredits(text),
+        minor: parseMinor(text),
+        transfer: parseTransferCredits(text),
+        ap: parseApTests(text),
+    };
 
-    student.id = parseId(text);
-    student.eid = parseEid(text);
     [student.firstName, student.lastName] = parseName(text);
-    student.preferredName = parsePreferredName(text);
-    student.schedule = parseClasses(text);
-    student.aleks = parseAleks(text);
-    student.credits = parseCredits(text);
-    student.minor = parseMinor(text);
-    student.transfer = parseTransferCredits(text);
-    student.ap = parseApTests(text);
-    
+
     // Build additional student data
     student.email = `${student.eid}@dukes.jmu.edu`;
     student.fullName = `${student.firstName} ${student.lastName}`;

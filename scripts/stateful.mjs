@@ -49,7 +49,6 @@ export default class Stateful {
                 el.value = value;
             }
             el.addEventListener('change', (ev) => {
-                console.log('change', key, el.value);
                 this.setItem(key, el.value);
             });
         });

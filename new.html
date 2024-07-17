@@ -89,6 +89,7 @@
         });
 
         let state = new Stateful();
+        state.initialize();
 
         document.getElementById("submitBtn").addEventListener("click", function (e) {
             e.preventDefault();
@@ -117,10 +118,6 @@
             } else {
                 toast("Invalid file type.", "error");
             }
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-            state.initialize();
         });
     </script>
 </body>

@@ -58,6 +58,11 @@ h2 {
     white-space: nowrap;
 }
 
+.class-row {
+    display: flex;
+    flex-direction: row;
+}
+
 #buttons {
     margin: 5px 0px;
 }
