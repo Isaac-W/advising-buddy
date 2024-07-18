@@ -26,10 +26,10 @@
                         <a id="start-link" class="nav-link active" href="index.html">Start</a>
                     </li>
                     <li class="nav-item">
-                        <a id="schedule-link" class="nav-link" href="schedule.html">Schedule</a>
+                        <a id="schedule-link" class="nav-link" href="schedule.html">Schedule Checker</a>
                     </li>
                     <li class="nav-item">
-                        <a id="gened-link" class="nav-link" href="geneds.html">GenEds</a>
+                        <a id="gened-link" class="nav-link" href="geneds.html">GenEd Requirements</a>
                     </li>
                 </ul>
             </div>
@@ -56,6 +56,10 @@
             </form>
         </div>
     </main>
+
+    <footer class="fixed-bottom mt-auto py-3 bg-body-tertiary text-center">
+        <div class="text-body-secondary">Copyright © 2024 Isaac Wang | Created with ♥ for James Madison University</div>
+    </footer>
 
     <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
         aria-labelledby="staticBackdropLabel" aria-hidden="true">
@@ -105,6 +109,7 @@
                 loadingModal.show();
                 parsePdf(document.getElementById("dataFile").files[0]).then((data) => {
                     localStorage.setItem("studentData", JSON.stringify(data));
+                    toast("File uploaded successfully. Redirecting...", "success");
                     window.location.href = "schedule.html";
                 }).catch((err) => {
                     toast(err, "error");

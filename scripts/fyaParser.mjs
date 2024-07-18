@@ -83,7 +83,7 @@ function parseStudentData(page) {
         credits: parseCredits(text),
         minor: parseMinor(text),
         transfer: parseTransferCredits(text),
-        ap: parseApTests(text),
+        tests: parseTests(text),
     };
 
     [student.firstName, student.lastName] = parseName(text);
@@ -92,8 +92,6 @@ function parseStudentData(page) {
     student.email = `${student.eid}@dukes.jmu.edu`;
     student.fullName = `${student.firstName} ${student.lastName}`;
     student.major = "Computer Science"; // Hardcoded
-    student.classList = student.schedule.map(c => c.id)
-        .filter((value, index, self) => self.indexOf(value) === index); // Only keep unique class IDs
 
     return student;
 }
@@ -166,18 +164,24 @@ function parseMinor(text) {
 }
 
 function parseTransferCredits(text) {
-    const pattern = /(\w+)-\d+ units via (?:(?:transfer)|(?:test)) credit/gm;
-    const matches = [...text.matchAll(pattern)];
-    return matches.map(match => match[1]);
-}
-
-function parseApTests(text) {
-    const pattern = /(AP .+) (\d+)/gm;
+    const pattern = /(\w+)-\d+ units via ((?:transfer)|(?:test)) credit/gm;
     const matches = [...text.matchAll(pattern)];
     return matches.map(match => {
         return {
-            test: match[1],
-            score: match[2],
+            id: match[1],
+            reason: match[2],
+        };
+    });
+}
+
+function parseTests(text) {
+    const pattern = /(AP) (.+?) (\d+)/gm; // TODO Only AP for now
+    const matches = [...text.matchAll(pattern)];
+    return matches.map(match => {
+        return {
+            type: match[1],
+            name: match[2],
+            score: match[3],
         };
     });
 }

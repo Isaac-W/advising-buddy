@@ -297,8 +297,7 @@ function canIGetThere(source, destination) {
 function addWalkabilityToEvents(events) {
     for (let i = 0; i < 5; i++) {
         let dayEvents = getEventsByDay(events, i + 1);
-        console.log(`Day ${i + 1}`);
-        console.log(dayEvents);
+        console.log(`Day ${i + 1}:`, dayEvents);
         addWalkabilityForDay(dayEvents);
     }
 }

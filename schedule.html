@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="https://fav.farm/📅">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="styles/toast.css">
     <style>
@@ -22,6 +23,17 @@
         .fc-header-toolbar {
             display: none !important;
         }
+
+        .fc-timegrid-event-harness:hover {
+            z-index: 999999 !important;
+        }
+
+        .fc-event:hover {
+            min-width: fit-content;
+            z-index: 999999 !important;
+        }
+
+        /* Custom styles */
 
         .class-container {
             display: flex;
@@ -61,23 +73,63 @@
             flex-direction: row;
         }
 
-        .fc-view {
-            z-index: auto;
+        #top-bar {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .fc-timegrid-event-harness:hover {
-            z-index: 999999 !important;
+        #checklist-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
         }
 
-        .fc-event:hover {
-            min-width: fit-content;
-            z-index: 999999 !important;
+        #checklist {
+            margin-bottom: 10px;
+            padding: 2px 5px;
+            border: 1px solid #ccc;
+            width: max-content;
+            min-width: 450px;
+            justify-self: end;
+        }
+
+        #checklist-items {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .checklist-status {
+            margin-right: 8px;
+        }
+
+        .checklist-item {
+            margin-right: 4px;
+            font-weight: 600;
+        }
+
+        .checklist-value {
+            margin-right: 8px;
+        }
+
+        .checklist-message {
+            font-style: italic;
+        }
+
+        .text-toggle[aria-expanded="false"] .text-expanded {
+            display: none;
+        }
+
+        .text-toggle[aria-expanded="true"] .text-collapsed {
+            display: none;
         }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4 noprint">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">Advising Buddy</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
@@ -90,10 +142,10 @@
                         <a id="start-link" class="nav-link" href="index.html">Start</a>
                     </li>
                     <li class="nav-item">
-                        <a id="schedule-link" class="nav-link active" href="schedule.html">Schedule</a>
+                        <a id="schedule-link" class="nav-link active" href="schedule.html">Schedule Checker</a>
                     </li>
                     <li class="nav-item">
-                        <a id="gened-link" class="nav-link" href="geneds.html">GenEds</a>
+                        <a id="gened-link" class="nav-link" href="geneds.html">GenEd Requirements</a>
                     </li>
                 </ul>
             </div>
@@ -101,27 +153,35 @@
     </nav>
 
     <main class="container-fluid">
-        <div class="row justify-content-center">
+        <div class="row justify-content-center noprint">
             <div class="bg-body-tertiary p-3 mb-3 rounded col-6">
-                <form>
-                    <div>
-                        <label class="lead form-label" for="studentSelect">Select a student:</label>
-                        <select class="form-select" id="studentSelect" data-state="student">
-                        </select>
-                    </div>
-                </form>
+                <div>
+                    <label class="lead form-label" for="studentSelect">Select a student:</label>
+                    <select class="form-select" id="studentSelect" data-state="student">
+                    </select>
+                </div>
             </div>
         </div>
 
         <div class="justify-content-center" id="results">
-            <div id="buttons" class="bg-body-tertiary p-3 mb-3">
+            <div id="buttons" class="bg-body-tertiary p-3 mb-3 noprint">
                 <button id="copy-btn" class="btn btn-primary" type="button">Copy Image</button>
                 <button id="download-btn" class="btn btn-secondary" type="button">Download Image</button>
             </div>
             <div id="schedule" class="mb-3">
-                <h1 id="schedule-title">Schedule</h1>
-                <div id="checklist">
-                    <ul id="checklist-items"></ul>
+                <div id="top-bar">
+                    <h1 id="schedule-title">Schedule</h1>
+                    <div id="checklist-container">
+                        <a class="text-toggle fs-5 link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover noprint"
+                            data-bs-toggle="collapse" data-bs-target="#checklist" href="#" aria-expanded="true">
+                            <span class="text-collapsed">Checklist <i class="bi bi-caret-down-fill"></i></span>
+                            <span class="text-expanded">Checklist <i class="bi bi-caret-up-fill"></i></span>
+                        </a>
+                        <div id="checklist" class="collapse show">
+                            <ul id="checklist-items">
+                            </ul>
+                        </div>
+                    </div>
                 </div>
                 <div id="calendar"></div>
             </div>
@@ -153,9 +213,10 @@
         import toast from "./scripts/toast.mjs";
         import Stateful from "./scripts/stateful.mjs";
         import { createCalendar } from "./scripts/calendar.mjs";
+        import { populateChecklist } from "./scripts/checklist.mjs";
 
         import { PDFDocument } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
-        
+
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
             // keyboard: false
@@ -196,7 +257,7 @@
                 toast(`Student ${id} not found.`, "error");
                 return;
             }
-
+            
             updateQueryString(id, newPage);
             updateTitle(student);
             updateLinks(id);
@@ -238,10 +299,10 @@
         const calendar = createCalendar(calendarEl);
 
         function showSchedule(student) {
+            console.log(student);
             scheduleTitleEl.textContent = `${student.preferredName}'s Schedule (${student.id})`;
+            populateChecklist(checklistEl, student);
             calendar.displaySchedule(student);
-
-            // TODO Checklist
         }
 
         //
