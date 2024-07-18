@@ -244,7 +244,7 @@ function checkFoundations(classes, transfer) {
     } else if (count === 1) {
         // Make sure progress is made towards C1CT or C1HC if only one course taken
         if ("C1W" in satisfied) {
-            status = "🚫";
+            status = "⚠";
             message = `Need C1CT or C1HC to finish on-time`;
         }
     } else {
