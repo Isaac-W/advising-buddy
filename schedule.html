@@ -129,7 +129,7 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4" data-html2canvas-ignore>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2" data-html2canvas-ignore>
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">Advising Buddy</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
@@ -139,35 +139,44 @@
             <div class="collapse navbar-collapse" id="navbarCollapse">
                 <ul class="navbar-nav me-auto mb-2 mb-md-0">
                     <li class="nav-item">
-                        <a id="start-link" class="nav-link" href="index.html">Start</a>
+                        <a id="start-link" class="nav-link" href="index.html">Start Here</a>
                     </li>
                     <li class="nav-item">
                         <a id="schedule-link" class="nav-link active" href="schedule.html">Schedule Checker</a>
                     </li>
-                    <li class="nav-item">
+                    <!-- <li class="nav-item">
                         <a id="gened-link" class="nav-link" href="geneds.html">GenEd Requirements</a>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
         </div>
     </nav>
 
     <main class="container-fluid">
-        <div class="row justify-content-center" data-html2canvas-ignore>
-            <div class="bg-body-tertiary p-3 mb-3 rounded col-6">
-                <div>
+        <div class="row p-2" data-html2canvas-ignore>
+            <div class="col-4">
+                <div class="bg-body-tertiary p-3 rounded">
                     <label class="lead form-label" for="studentSelect">Select a student:</label>
                     <select class="form-select" id="studentSelect" data-state="student">
                     </select>
                 </div>
             </div>
+            <div class="col-4">
+                <div class="bg-body-tertiary p-3 rounded">
+                    <p class="lead">Schedule:</p>
+                    <button id="copy-btn" class="btn btn-primary" type="button">Copy Image</button>
+                    <button id="download-btn" class="btn btn-secondary" type="button">Download Image</button>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="bg-body-tertiary p-3 rounded">
+                    <p class="lead">Batch:</p>
+                    <button id="download-all-btn" class="btn btn-secondary" type="button">Download All (PDF)</button>
+                </div>
+            </div>
         </div>
 
         <div class="justify-content-center" id="results">
-            <div id="buttons" class="bg-body-tertiary p-3 mb-3" data-html2canvas-ignore>
-                <button id="copy-btn" class="btn btn-primary" type="button">Copy Image</button>
-                <button id="download-btn" class="btn btn-secondary" type="button">Download Image</button>
-            </div>
             <div id="schedule" class="mb-3">
                 <div id="top-bar">
                     <h1 id="schedule-title">Schedule</h1>
@@ -190,8 +199,8 @@
     </main>
 
     <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-labelledby="staticBackdropLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        aria-labelledby="staticBackdropLabel" aria-hidden="true" data-html2canvas-ignore>
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
                     <h1 class="modal-title fs-5" id="loadingModalTitle">Please Wait</h1>
@@ -217,7 +226,7 @@
         import { populateChecklist } from "./scripts/checklist.mjs";
 
         import html2canvas from "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm";
-        import { PDFDocument } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
+        import { PDFDocument, PageSizes } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
@@ -238,7 +247,7 @@
         //  Student selector
         //
 
-        let studentData = null;
+        let curStudent = null;
 
         const studentSelect = document.getElementById("studentSelect");
         students.forEach((student, index) => {
@@ -252,9 +261,6 @@
             updatePage(e.target.value);
         });
 
-        const pageIds = ["gened-link"]
-        const pageLinks = pageIds.map(id => document.getElementById(id));
-
         function updatePage(id, newPage = true) {
             const student = students.find((student) => student.id == id);
             if (!student) {
@@ -262,7 +268,7 @@
                 return;
             }
 
-            studentData = student;
+            curStudent = student;
 
             updateQueryString(id, newPage);
             updateTitle(student);
@@ -286,8 +292,12 @@
             document.title = `${student.preferredName}'s Schedule - Advising Buddy`;
         }
 
+        const pageIds = ["gened-link"]
+        const pageLinks = pageIds.map(id => document.getElementById(id));
+
         function updateLinks(id) {
             pageLinks.forEach(link => {
+                if (!link) return;
                 const url = new URL(link.href);
                 url.searchParams.set("id", id);
                 link.href = url.href;
@@ -317,22 +327,23 @@
 
         const copyBtn = document.getElementById("copy-btn");
         const downloadBtn = document.getElementById("download-btn");
+        const downloadAllBtn = document.getElementById("download-all-btn");
 
-        async function getScheduleCanvas() {
+        async function getScheduleCanvas(width = 1600, padding = 24) {
             const scheduleEl = document.getElementById("schedule");
             const calendarEl = document.getElementById('calendar');
 
             const oldWidth = calendarEl.style.width;
-            calendarEl.style.width = "1600px"; // Set to make fit on Letter size paper
+            calendarEl.style.width = `${width}px`; // Set to make fit on Letter size paper
             calendar.render();
 
             return html2canvas(scheduleEl, {
                 scale: 2,
-                windowWidth: calendarEl.scrollWidth + 24, // 12px padding on each side
+                windowWidth: width + padding,
             }).finally(() => {
                 calendarEl.style.width = oldWidth;
                 calendar.render();
-            });            
+            });
         }
 
         copyBtn.addEventListener("click", async (ev) => {
@@ -360,17 +371,80 @@
             downloadBtn.disabled = true;
 
             const canvas = await getScheduleCanvas();
-
-            // Save to PNG
             const pngDataUrl = canvas.toDataURL("image/png");
-            
-            // Create link
+
+            // Create link and download
             const a = document.createElement("a");
-            a.download = `${studentData.eid}-schedule.png`;
+            a.download = `${curStudent.eid}-schedule.png`;
             a.href = pngDataUrl;
             a.click();
 
             downloadBtn.disabled = false;
+        });
+
+        downloadAllBtn.addEventListener("click", async () => {
+            // Prompt user before downloading all schedules
+            if (!confirm("This may take a while!\n\nAre you sure you want to download all schedules?")) {
+                return;
+            }
+
+            // Save state and disable interaction
+            downloadAllBtn.disabled = true;
+            loadingModal.show();
+            const prevId = studentSelect.value;
+
+            toast("Generating schedules...", "info");
+
+            // Create PDF
+            const pdfDoc = await PDFDocument.create();
+            const ppi = 72; // Default pixels per inch for PDF-LIB
+            const margin = 0.5 * ppi; // 0.5 inch margin
+            const pageSizePortrait = PageSizes.Letter;
+            const pageSizeLandscape = [pageSizePortrait[1], pageSizePortrait[0]];
+
+            // Loop through all students in selector
+            for (let i = 0; i < studentSelect.options.length; i++) {
+                const studentId = studentSelect.options[i].value;
+                updatePage(studentId, false);
+
+                const canvas = await getScheduleCanvas(1600, 40); // For some reason, enabling modal causes calendar to be cut off (40 is the magic number)
+                const image = await pdfDoc.embedPng(canvas.toDataURL("image/png"));
+
+                const page = pdfDoc.addPage(pageSizeLandscape);
+                const { width, height } = page.getSize();
+                const scale = Math.min((width - 2 * margin) / canvas.width, (height - 2 * margin) / canvas.height);
+
+                page.drawImage(image, {
+                    x: margin,
+                    y: height - margin - canvas.height * scale,
+                    width: canvas.width * scale,
+                    height: canvas.height * scale,
+                });
+            }
+
+            toast("Creating PDF...", "info");
+
+            // Save and download PDF
+            const pdfBytes = await pdfDoc.save();
+            const pdfDataUrl = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
+
+            const a = document.createElement("a");
+            a.download = "advising_schedules.pdf";
+            a.href = pdfDataUrl;
+            a.click();
+
+            // Reset state
+            studentSelect.value = prevId;
+            updatePage(prevId, false);
+            downloadAllBtn.disabled = false;
+            loadingModal.hide();
+
+            toast("PDF download complete.", "success");
+
+            // Backup hide in case it's too fast
+            setTimeout(() => {
+                loadingModal.hide();
+            }, 1000);
         });
 
         //
