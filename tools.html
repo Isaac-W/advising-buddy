@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Advising Buddy</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="https://fav.farm/📅">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf_viewer.min.css">
+    <link rel="stylesheet" href="styles/toast.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">Advising Buddy</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
+                aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a id="start-link" class="nav-link" href="index.html">Start Here</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="schedule-link" class="nav-link" href="schedule.html">Schedule Checker</a>
+                    </li>
+                    <!-- <li class="nav-item">
+                        <a id="gened-link" class="nav-link" href="geneds.html">GenEd Requirements</a>
+                    </li> -->
+                    <li class="nav-item">
+                        <a id="tools-link" class="nav-link active" href="tools.html">Tools</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1 class="text-center">Tools</h1>
+        <div class="row justify-content-center">
+            <div class="bg-body-tertiary p-3 rounded center-block col-md-6">
+                <p class="lead">Interleave PDFs</p>
+                <p>Combine two PDFs into one, with pages alternating between the two.</p>
+
+                <form id="interleave-form" class="mb-3">
+                    <div class="mb-3">
+                        <label for="pdf1" class="form-label">First PDF</label>
+                        <input type="file" class="form-control" id="pdf1" accept=".pdf" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pdf2" class="form-label">Second PDF</label>
+                        <input type="file" class="form-control" id="pdf2" accept=".pdf" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Interleave</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="loadingModalTitle">Please Wait</h1>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+    <script type="module">
+        import toast from "./scripts/toast.mjs";
+        import Stateful from "./scripts/stateful.mjs";
+        
+        import { PDFDocument, PageSizes } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
+
+        const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
+            backdrop: "static",
+            // keyboard: false
+        });
+
+        const interleaveForm = document.getElementById("interleave-form");
+        interleaveForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const pdf1 = interleaveForm.elements["pdf1"].files[0];
+            const pdf2 = interleaveForm.elements["pdf2"].files[0];
+
+            if (!pdf1 || !pdf2) {
+                toast("Please select two PDFs to interleave.", "error");
+                return;
+            }
+
+            loadingModal.show();
+
+            const pdf1Data = await pdf1.arrayBuffer();
+            const pdf2Data = await pdf2.arrayBuffer();
+
+            const pdf1Doc = await PDFDocument.load(pdf1Data);
+            const pdf2Doc = await PDFDocument.load(pdf2Data);
+
+            const interleavedDoc = await PDFDocument.create();
+            const pdf1Pages = await interleavedDoc.copyPages(pdf1Doc, pdf1Doc.getPageIndices());
+            const pdf2Pages = await interleavedDoc.copyPages(pdf2Doc, pdf2Doc.getPageIndices());
+
+            for (let i = 0; i < Math.max(pdf1Pages.length, pdf2Pages.length); i++) {
+                if (i < pdf1Pages.length) {
+                    interleavedDoc.addPage(pdf1Pages[i]);
+                }
+                if (i < pdf2Pages.length) {
+                    interleavedDoc.addPage(pdf2Pages[i]);
+                }
+            }
+
+            const interleavedData = await interleavedDoc.save();
+            const interleavedBlob = new Blob([interleavedData], { type: "application/pdf" });
+            const interleavedUrl = URL.createObjectURL(interleavedBlob);
+
+            const a = document.createElement("a");
+            a.href = interleavedUrl;
+            a.download = `interleaved-${pdf1.name.replace(".pdf", "")}-${pdf2.name.replace(".pdf", "")}.pdf`;
+            a.click();
+
+            // Delay in case the download is too fast
+            setTimeout(() => {
+                loadingModal.hide();
+            }, 1000);
+        });
+    </script>
+</body>
+
+</html>
