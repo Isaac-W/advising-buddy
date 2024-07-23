@@ -337,8 +337,12 @@
             const calendarEl = document.getElementById('calendar');
 
             const oldWidth = calendarEl.style.width;
-            calendarEl.style.width = `${width}px`; // Set to make fit on Letter size paper
-            calendar.render();
+            if (width) {
+                calendarEl.style.width = `${width}px`; // Set to make fit on Letter size paper
+                calendar.render();
+            } else {
+                width = calendarEl.offsetWidth;
+            }
 
             return html2canvas(scheduleEl, {
                 scale: 2,
@@ -396,7 +400,7 @@
             loadingModal.show();
             const prevId = studentSelect.value;
 
-            toast("Generating schedules...", "info");
+            toast("Generating PDF...", "info");
 
             // Create PDF
             const pdfDoc = await PDFDocument.create();
@@ -425,29 +429,31 @@
                 });
             }
 
-            toast("Creating PDF...", "info");
+            toast("Saving PDF...", "info");
 
             // Save and download PDF
-            const pdfBytes = await pdfDoc.save();
-            const pdfDataUrl = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
+            setTimeout(async () => {
+                const pdfBytes = await pdfDoc.save();
+                const pdfDataUrl = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
 
-            const a = document.createElement("a");
-            a.download = "all_schedules.pdf";
-            a.href = pdfDataUrl;
-            a.click();
+                const a = document.createElement("a");
+                a.download = "all_schedules.pdf";
+                a.href = pdfDataUrl;
+                a.click();
 
-            // Reset state
-            studentSelect.value = prevId;
-            updatePage(prevId, false);
-            downloadAllBtn.disabled = false;
-            loadingModal.hide();
-
-            toast("PDF download complete.", "success");
-
-            // Backup hide in case it's too fast
-            setTimeout(() => {
+                // Reset state
+                studentSelect.value = prevId;
+                updatePage(prevId, false);
+                downloadAllBtn.disabled = false;
                 loadingModal.hide();
-            }, 1000);
+                
+                toast("Download complete.", "success");
+
+                // Backup hide in case it's too fast
+                setTimeout(() => {
+                    loadingModal.hide();
+                }, 1000);
+            }, 300); // Delay to allow toast to show
         });
 
         //
