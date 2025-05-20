@@ -56,6 +56,8 @@ function processChecklist(student) {
     items.push(checkFoundations(classes, transfer));
     items.pushOptional(checkDuplicates(classes, transfer));
 
+    // Add more items to the checklist as needed
+
     return items;
 }
 

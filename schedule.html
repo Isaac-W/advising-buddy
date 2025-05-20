@@ -292,7 +292,7 @@
         }
 
         function updateTitle(student) {
-            document.title = `${student.preferredName}'s Schedule - Advising Buddy`;
+            document.title = `${student.preferredName} ${student.lastName}'s Schedule - Advising Buddy`;
         }
 
         const pageIds = ["gened-link"]
@@ -319,7 +319,7 @@
 
         function showSchedule(student) {
             console.log(student);
-            scheduleTitleEl.textContent = `${student.preferredName}'s Schedule (${student.id})`;
+            scheduleTitleEl.textContent = `${student.preferredName} ${student.lastName}'s Schedule (${student.id})`;
             populateChecklist(checklistEl, student);
             calendar.displaySchedule(student);
         }

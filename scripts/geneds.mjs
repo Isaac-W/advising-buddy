@@ -32,6 +32,7 @@ export const genEdCourses = {
     ],
     "C2VPA": [
         "ART200",
+        "ARTH204",
         "ARTH205",
         "ARTH206",
         "DANC215",
@@ -74,6 +75,7 @@ export const genEdCourses = {
         "ISCI101",
         "ISCI172",
         "PHYS121",
+        "PHYS125",
         "PHYS140",
         "PHYS215",
         "PHYS240",
@@ -101,6 +103,7 @@ export const genEdCourses = {
         "ISAT113L",
         "ISCI104",
         "ISCI173",
+        "PHYS125L",
         "PHYS140L",
         "PHYS240L",
     ],
@@ -126,6 +129,7 @@ export const genEdCourses = {
         "PSYC160",
         "SOCI140",
         "WGSS200",
+        "EDUC175",
     ],
 }
 
