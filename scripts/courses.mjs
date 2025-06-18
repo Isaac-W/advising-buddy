@@ -14410,7 +14410,7 @@ export const allCourses = {
 }
 
 export function getCourseCredits(courseCode, defaultToMin = true) {
-    const course = courses[courseCode];
+    const course = allCourses[courseCode];
     if (course && course.credits) {
         if (course.credits.includes('-')) {
             const [min, max] = course.credits.split('-').map(Number);

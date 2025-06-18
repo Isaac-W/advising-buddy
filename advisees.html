@@ -36,31 +36,33 @@
             </form>
         </div>
 
-        <table class="table table-striped table-bordered mt-5 d-none" id="studentsTable">
-            <thead class="table-light">
-                <tr>
-                    <th colspan="3" class="text-center" scope="colgroup">Info</th>
-                    <th colspan="2" class="text-center" scope="colgroup">Major Courses</th>
-                    <th colspan="3" class="text-center" scope="colgroup">Madison Foundations</th>
-                    <th colspan="2" class="text-center" scope="colgroup">Other</th>
-                </tr>
-                <tr>
-                    <th scope="col">Name</th>
-                    <th scope="col">Student ID</th>
-                    <th scope="col"># of Courses</th>
-                    <th scope="col">CS Course</th>
-                    <th scope="col">MATH Course</th>
-                    <th scope="col">Critical Thinking</th>
-                    <th scope="col">Communication</th>
-                    <th scope="col">Writing</th>
-                    <th scope="col">GenEds</th>
-                    <th scope="col">Electives</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Rows will be inserted here dynamically -->
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-light table-striped table-bordered mt-5 d-none" id="studentsTable">
+                <thead>
+                    <tr>
+                        <th colspan="3" class="text-center" scope="colgroup">Info</th>
+                        <th colspan="2" class="text-center" scope="colgroup">Major Courses</th>
+                        <th colspan="3" class="text-center" scope="colgroup">Madison Foundations</th>
+                        <th colspan="2" class="text-center" scope="colgroup">Other</th>
+                    </tr>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Student ID</th>
+                        <th scope="col">Credits</th>
+                        <th scope="col">CS Course</th>
+                        <th scope="col">MATH Course</th>
+                        <th scope="col">Critical Thinking</th>
+                        <th scope="col">Communication</th>
+                        <th scope="col">Writing</th>
+                        <th scope="col">GenEds</th>
+                        <th scope="col">Electives</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be inserted here dynamically -->
+                </tbody>
+            </table>
+        </div>
     </main>
 
     <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
@@ -86,11 +88,19 @@
 
     <script type="module">
         import toast from "./scripts/toast.mjs";
+        import Stateful from "./scripts/stateful.mjs";
+        import { allCourses, getCourseCredits } from "./scripts/courses.mjs"
+
+        let state = new Stateful();
+        state.initialize();
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
-            // keyboard: false
         });
+
+        function getTotalCredits(courses) {
+            return courses.reduce((total, course) => (total + getCourseCredits(course.Subject.replace("-", ""))), 0);
+        }
 
         document.getElementById("submitBtn").addEventListener("click", async function (e) {
             e.preventDefault();
@@ -128,14 +138,30 @@
                     idCell.textContent = student.studentId;
                     row.appendChild(idCell);
 
-                    const numCoursesCell = document.createElement("td");
-                    numCoursesCell.textContent = courses.length; // Count only valid courses
-                    row.appendChild(numCoursesCell);
+                    // CREDITS CHECK
+
+                    const totalCredits = getTotalCredits(courses);
+
+                    const numCreditsCell = document.createElement("td");
+                    numCreditsCell.textContent = totalCredits;
+                    row.appendChild(numCreditsCell);
+
+                    if (totalCredits === 0) {
+                        row.classList.add("table-danger");
+                    } else if (totalCredits < 12) {
+                        numCreditsCell.classList.add("table-danger");
+                    } else if (totalCredits < 14) {
+                        numCreditsCell.classList.add("table-warning");
+                    } else if (totalCredits >= 17) {
+                        numCreditsCell.classList.add("table-primary");
+                    }
+
+                    // MAJOR CHECK
 
                     // Find specific cell with list of all course subjects starting with CS
                     const csCourses = courses.filter(c => c.Subject && c.Subject.startsWith("CS"));
                     courses = courses.filter(c => !csCourses.includes(c));
-                    
+
                     const csCell = document.createElement("td");
                     csCell.textContent = csCourses.length > 0 ? csCourses.map(c => c.Subject).join(", ") : "";
                     row.appendChild(csCell);
@@ -147,6 +173,21 @@
                     const mathCell = document.createElement("td");
                     mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.Subject).join(", ") : "";
                     row.appendChild(mathCell);
+
+                    if (csCell.textContent.includes("CS-149")) {
+                        csCell.classList.add("table-success");
+                    }
+
+                    if (mathCell.textContent.includes("MATH-155")) {
+                        mathCell.classList.add("table-info");
+                    }
+
+                    if (csCourses.length === 0 && mathCourses.length === 0) {
+                        csCell.classList.add("table-danger");
+                        mathCell.classList.add("table-danger");
+                    }
+
+                    // MADISON FOUNDATIONS CHECK
 
                     // Find all DescNames with [C1CT]
                     const ctCourses = courses.filter(c => c.DescName && c.DescName.includes("[C1CT]"));
@@ -172,10 +213,21 @@
                     writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.Subject).join(", ") : "";
                     row.appendChild(writingCell);
 
+                    if (ctCourses.length === 0 && commCourses.length === 0) {
+                        ctCell.classList.add("table-danger");
+                        commCell.classList.add("table-danger");
+
+                        if (writingCourses.length === 0) {
+                            writingCell.classList.add("table-danger");
+                        }
+                    }
+
+                    // OTHER CHECKS
+
                     // Find all DescNames that include brackets at the end
                     const genEdCourses = courses.filter(c => c.DescName && c.DescName.endsWith("]"));
                     courses = courses.filter(c => !genEdCourses.includes(c));
-                    
+
                     const genEdCell = document.createElement("td");
                     genEdCell.textContent = genEdCourses.length > 0 ? genEdCourses.map(c => c.Subject).join(", ") : "";
                     row.appendChild(genEdCell);
@@ -184,7 +236,7 @@
                     const electiveCell = document.createElement("td");
                     electiveCell.textContent = courses.length > 0 ? courses.map(c => c.Subject).join(", ") : "";
                     row.appendChild(electiveCell);
-                    
+
                     // Append the row to the table body
                     document.querySelector("#studentsTable tbody").appendChild(row);
                 }
