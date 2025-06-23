@@ -125,11 +125,28 @@
         .text-toggle[aria-expanded="true"] .text-collapsed {
             display: none;
         }
+
+        /* Print styles */
+
+        @page {
+            size: landscape;
+        }
+
+        @media print {
+            .fc-event-main {
+                color: black !important;
+                font-size: medium !important;
+            }
+
+            body {
+                zoom: 75%; /* Magic value that makes it fit */
+            }
+        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2" data-html2canvas-ignore>
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2 d-print-none" data-html2canvas-ignore>
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">Advising Buddy</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
@@ -156,7 +173,7 @@
     </nav>
 
     <main class="container-fluid">
-        <div class="row p-2" data-html2canvas-ignore>
+        <div class="row p-2 d-print-none" data-html2canvas-ignore>
             <div class="col-4">
                 <div class="bg-body-tertiary p-3 rounded">
                     <label class="lead form-label" for="studentSelect">Select a student:</label>
@@ -167,9 +184,10 @@
             <div class="col-4">
                 <div class="bg-body-tertiary p-3 rounded">
                     <p class="lead">Schedule:</p>
-                    <button id="copy-btn" class="btn btn-primary" type="button">Copy Image</button>
-                    <button id="download-btn" class="btn btn-secondary" type="button">Download Image</button>
-                    <button id="download-pdf-btn" class="btn btn-secondary" type="button">Download PDF</button>
+                    <button id="print-btn" class="btn btn-primary" type="button">Print Schedule</button>
+                    <button id="copy-btn" class="btn btn-secondary" type="button">Copy Image</button>
+                    <button id="download-btn" class="btn btn-secondary" type="button" hidden>Download Image</button>
+                    <button id="compose-email-btn" class="btn btn-info" type="button">Compose Email</button>
                 </div>
             </div>
             <div class="col-4">
@@ -185,7 +203,7 @@
                 <div id="top-bar">
                     <h1 id="schedule-title">Schedule</h1>
                     <div id="checklist-container">
-                        <a class="text-toggle fs-5 link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover"
+                        <a class="text-toggle fs-5 link-secondary link-underline link-underline-opacity-0 link-underline-opacity-75-hover d-print-none"
                             data-html2canvas-ignore data-bs-toggle="collapse" data-bs-target="#checklist" href="#"
                             aria-expanded="true">
                             <span class="text-collapsed">Checklist <i class="bi bi-caret-down-fill"></i></span>
@@ -202,8 +220,8 @@
         </div>
     </main>
 
-    <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-labelledby="staticBackdropLabel" aria-hidden="true" data-html2canvas-ignore>
+    <div class="modal fade d-print-none" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false"
+        tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true" data-html2canvas-ignore>
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -331,7 +349,7 @@
 
         const copyBtn = document.getElementById("copy-btn");
         const downloadBtn = document.getElementById("download-btn");
-        const downloadPdfBtn = document.getElementById("download-pdf-btn");
+        const printBtn = document.getElementById("print-btn");
         const downloadAllBtn = document.getElementById("download-all-btn");
 
         async function getScheduleCanvas(width = 1600, padding = 24) {
@@ -355,18 +373,22 @@
             });
         }
 
-        copyBtn.addEventListener("click", async (ev) => {
-            copyBtn.disabled = true;
-
+        async function copyImageToClipboard() {
             const canvas = await getScheduleCanvas();
             const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 
+            await navigator.clipboard.write([
+                new ClipboardItem({
+                    "image/png": blob
+                })
+            ]);
+        }
+
+        copyBtn.addEventListener("click", async (ev) => {
+            copyBtn.disabled = true;
+
             try {
-                await navigator.clipboard.write([
-                    new ClipboardItem({
-                        "image/png": blob
-                    })
-                ]);
+                await copyImageToClipboard();
                 toast("Image copied to clipboard.", "success");
             } catch (err) {
                 console.error(err);
@@ -404,7 +426,7 @@
             // Get the schedule canvas
             const canvas = await getScheduleCanvas(1600, 40); // For some reason, enabling modal causes calendar to be cut off (40 is the magic number)
             const image = await pdfDoc.embedPng(canvas.toDataURL("image/png"));
-            
+
             // Create a new page
             const page = pdfDoc.addPage(pageSizeLandscape);
             const { width, height } = page.getSize();
@@ -432,14 +454,23 @@
             a.click();
         }
 
-        downloadPdfBtn.addEventListener("click", async () => {
-            downloadPdfBtn.disabled = true;
+        printBtn.addEventListener("click", async () => {
+            printBtn.disabled = true;
 
-            const pdfDoc = await makeSchedulePdf();
-            await savePdf(pdfDoc, `${curStudent.eid}_schedule.pdf`);
+            const oldTitle = document.title;
+            document.title = `${curStudent.preferredName} ${curStudent.lastName}'s Schedule`;
 
-            downloadPdfBtn.disabled = false;
-            toast("Download complete.", "success");
+            const oldWidth = calendarEl.style.width;
+            calendarEl.style.width = `1600px`; // Set to make fit on Letter size paper
+            calendar.render();
+
+            window.print();
+
+            calendarEl.style.width = oldWidth;
+            calendar.render();
+
+            document.title = oldTitle;
+            printBtn.disabled = false;
         });
 
         downloadAllBtn.addEventListener("click", async () => {
@@ -477,7 +508,7 @@
                 updatePage(prevId, false);
                 downloadAllBtn.disabled = false;
                 loadingModal.hide();
-                
+
                 toast("Download complete.", "success");
 
                 // Backup hide in case it's too fast
@@ -485,6 +516,67 @@
                     loadingModal.hide();
                 }, 1000);
             }, 300); // Delay to allow toast to show
+        });
+
+        const composeEmailBtn = document.getElementById("compose-email-btn");
+        composeEmailBtn.addEventListener("click", async () => {
+            composeEmailBtn.disabled = true;
+
+            let address = curStudent.email || "";
+            let subject = "From your Academic Advisor: Schedule Check";
+
+            // Dynamically create email body
+            let body = `Hi ${curStudent.preferredName},\n\n`;
+
+            body += `I've reviewed your schedule, and you're currently enrolled in ${curStudent.credits} credit${curStudent.credits === 1 ? "" : "s"}.\n`;
+            if (curStudent.credits == 0) {
+                body += "Please enroll in classes as soon as possible! You need 12 credits to be full-time, and ~15 credits to graduate on time.\n";
+            } else if (curStudent.credits < 12) {
+                body += "You're currently enrolled in less than 12 credits, which is below the full-time requirement.\n";
+            }
+            body += "\n";
+
+            body += "Enrollment Checklist:\n";
+            const checklistItems = document.querySelectorAll("#checklist-items li");
+            for (const li of checklistItems) {
+                body += ` -`;
+                for (const child of li.children) {
+                    body += ` ${child.textContent}`;
+                }
+                body += `\n`;
+            }
+            body += "\n";
+
+            body += "Other notes:\n";
+            body += ` - \n`;
+            body += `\n`;
+
+            body += `Please let me know if you have any questions or concerns.\n\n` +
+                `Best,\n`;
+
+            // // Copy the email body to clipboard
+            // try {
+            //     await navigator.clipboard.writeText(body);
+            //     toast("Email body copied to clipboard.", "success");
+            // } catch (err) {
+            //     console.error("Failed to copy email body to clipboard:", err);
+            //     toast("Failed to copy email body to clipboard.", "error");
+            // }
+
+            // Copy the schedule image to clipboard
+            // try {
+            //     await copyImageToClipboard();
+            //     toast("Image copied to clipboard.", "success");
+            // } catch (err) {
+            //     console.error("Failed to copy image to clipboard:", err);
+            //     toast("Failed to copy image to clipboard.", "error");
+            // }
+
+            // Compose mailto link
+            const mailtoLink = `mailto:${address}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoLink;
+
+            composeEmailBtn.disabled = false;
         });
 
         //

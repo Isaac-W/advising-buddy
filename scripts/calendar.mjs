@@ -110,6 +110,18 @@ function lTrim(str, chars) {
     return str.slice(start);
 }
 
+function shortenLocation(location) {
+    location = location.replace("Engineering/Geosciences", "EnGeo");
+    location = location.replace("Health & Behavioral St", "HBS");
+    location = location.replace("Student Success Center", "SSC");
+    location = location.replace("University Recreation Center", "UREC");
+    location = location.replace("Festival Conference & Student Center", "Festival");
+    location = location.replace(" Stadium", "");
+    location = location.replace(" Hall", "");
+    location = location.replace(" Auditorium", "");
+    return location;
+}
+
 // Custom event rendering callback
 function renderEvent(arg) {
     const event = arg.event;
@@ -150,7 +162,7 @@ function renderEvent(arg) {
 
         let locationEl = document.createElement('span');
         locationEl.classList.add('class-loc');
-        locationEl.textContent = toTitleCase(region) + (course.location ? `: ${course.location}` : "");
+        locationEl.textContent = shortenLocation(course.location);
         row.appendChild(locationEl);
     }
     container.appendChild(row);
