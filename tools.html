@@ -43,19 +43,46 @@
         <h1 class="text-center">Tools</h1>
         <div class="row justify-content-center">
             <div class="bg-body-tertiary p-3 rounded center-block col-md-6">
+                <p class="lead">Combine PDFs</p>
+                <p>Combine multiple PDFs into one file, sequentially.</p>
+
+                <form id="combine-form" class="mb-3">
+                    <div class="mb-3">
+                        <label for="combinePdfs" class="form-label">PDF Files to Combine</label>
+                        <input type="file" class="form-control" id="combinePdfs" accept=".pdf" multiple required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Combine</button>
+                </form>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-4">
+            <div class="bg-body-tertiary p-3 rounded center-block col-md-6">
                 <p class="lead">Interleave PDFs</p>
-                <p>Combine two PDFs into one, with pages alternating between the two.</p>
+                <p>Combine multiple PDFs into one, with pages alternating between them.</p>
 
                 <form id="interleave-form" class="mb-3">
                     <div class="mb-3">
-                        <label for="pdf1" class="form-label">First PDF</label>
-                        <input type="file" class="form-control" id="pdf1" accept=".pdf" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="pdf2" class="form-label">Second PDF</label>
-                        <input type="file" class="form-control" id="pdf2" accept=".pdf" required>
+                        <label for="interleavePdfs" class="form-label">PDF Files to Interleave</label>
+                        <input type="file" class="form-control" id="interleavePdfs" accept=".pdf" multiple required>
                     </div>
                     <button type="submit" class="btn btn-primary">Interleave</button>
+                </form>
+            </div>
+        </div>
+        <div class="row justify-content-center mt-4">
+            <div class="bg-body-tertiary p-3 rounded center-block col-md-6">
+                <p class="lead">Split PDFs</p>
+                <p>Split a PDF into multiple files.</p>
+
+                <form id="split-form" class="mb-3">
+                    <div class="mb-3">
+                        <label for="splitPdfs" class="form-label">PDF File to Split</label>
+                        <input type="file" class="form-control" id="splitPdfs" accept=".pdf" multiple required>
+                        <label for="splitBy" class="form-label mt-2">Split Every X Pages</label>
+                        <input type="number" class="form-control w-auto" id="splitBy" name="splitBy" min="1" value="1"
+                            required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Split</button>
                 </form>
             </div>
         </div>
@@ -85,7 +112,7 @@
     <script type="module">
         import toast from "./scripts/toast.mjs";
         import Stateful from "./scripts/stateful.mjs";
-        
+
         import { PDFDocument, PageSizes } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
@@ -93,36 +120,127 @@
             // keyboard: false
         });
 
-        const interleaveForm = document.getElementById("interleave-form");
-        interleaveForm.addEventListener("submit", async (event) => {
+        const combineForm = document.getElementById("combine-form");
+        combineForm.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            const pdf1 = interleaveForm.elements["pdf1"].files[0];
-            const pdf2 = interleaveForm.elements["pdf2"].files[0];
+            const pdfFiles = combineForm.elements["combinePdfs"].files;
 
-            if (!pdf1 || !pdf2) {
-                toast("Please select two PDFs to interleave.", "error");
+            if (pdfFiles.length < 2) {
+                toast("Please select at least two PDFs to combine.", "error");
                 return;
             }
 
             loadingModal.show();
 
-            const pdf1Data = await pdf1.arrayBuffer();
-            const pdf2Data = await pdf2.arrayBuffer();
+            const combinedDoc = await PDFDocument.create();
+            for (const pdfFile of pdfFiles) {
+                const pdfData = await pdfFile.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(pdfData);
+                const pages = await combinedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                pages.forEach(page => combinedDoc.addPage(page));
+            }
 
-            const pdf1Doc = await PDFDocument.load(pdf1Data);
-            const pdf2Doc = await PDFDocument.load(pdf2Data);
+            const combinedData = await combinedDoc.save();
+            const combinedBlob = new Blob([combinedData], { type: "application/pdf" });
+            const combinedUrl = URL.createObjectURL(combinedBlob);
 
+            const a = document.createElement("a");
+            a.href = combinedUrl;
+            a.download = `combined-${Date.now()}.pdf`;
+            a.click();
+
+            // Delay in case the download is too fast
+            setTimeout(() => {
+                loadingModal.hide();
+            }, 1000);
+        });
+
+        const splitForm = document.getElementById("split-form");
+        splitForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const pdfFile = splitForm.elements["splitPdfs"].files[0];
+            const splitBy = parseInt(splitForm.elements["splitBy"].value, 10);
+
+            if (!pdfFile) {
+                toast("Please select a PDF to split.", "error");
+                return;
+            }
+
+            if (isNaN(splitBy) || splitBy < 1) {
+                toast("Please enter a valid number of pages to split by.", "error");
+                return;
+            }
+
+            loadingModal.show();
+
+            const pdfData = await pdfFile.arrayBuffer();
+            const pdfDoc = await PDFDocument.load(pdfData);
+            const totalPages = pdfDoc.getPageCount();
+            const splitDocs = [];
+
+            for (let i = 0; i < totalPages; i += splitBy) {
+                const newDoc = await PDFDocument.create();
+                const pagesToCopy = pdfDoc.getPageIndices().slice(i, i + splitBy);
+                const copiedPages = await newDoc.copyPages(pdfDoc, pagesToCopy);
+                copiedPages.forEach(page => newDoc.addPage(page));
+                splitDocs.push(newDoc);
+            }
+
+            for (let i = 0; i < splitDocs.length; i++) {
+                const data = await splitDocs[i].save();
+                const blob = new Blob([data], { type: "application/pdf" });
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${pdfFile.name.replace(".pdf", "")}-part${i + 1}.pdf`;
+                a.click();
+            }
+
+            // Delay in case the download is too fast
+            setTimeout(() => {
+                loadingModal.hide();
+            }, 1000);
+        });
+
+        const interleaveForm = document.getElementById("interleave-form");
+        interleaveForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const files = interleaveForm.elements["interleavePdfs"].files;
+
+            if (!files || files.length < 2) {
+                toast("Please select at least two PDFs to interleave.", "error");
+                return;
+            }
+
+            loadingModal.show();
+
+            // Load all PDFs and their pages
+            const pdfDocs = [];
+            const pdfPagesArr = [];
+            for (const file of files) {
+                const data = await file.arrayBuffer();
+                const doc = await PDFDocument.load(data);
+                pdfDocs.push(doc);
+            }
+
+            // Copy pages from each PDF
             const interleavedDoc = await PDFDocument.create();
-            const pdf1Pages = await interleavedDoc.copyPages(pdf1Doc, pdf1Doc.getPageIndices());
-            const pdf2Pages = await interleavedDoc.copyPages(pdf2Doc, pdf2Doc.getPageIndices());
+            for (const doc of pdfDocs) {
+                const pages = await interleavedDoc.copyPages(doc, doc.getPageIndices());
+                pdfPagesArr.push(pages);
+            }
 
-            for (let i = 0; i < Math.max(pdf1Pages.length, pdf2Pages.length); i++) {
-                if (i < pdf1Pages.length) {
-                    interleavedDoc.addPage(pdf1Pages[i]);
-                }
-                if (i < pdf2Pages.length) {
-                    interleavedDoc.addPage(pdf2Pages[i]);
+            // Interleave pages
+            const maxPages = Math.max(...pdfPagesArr.map(pages => pages.length));
+            for (let i = 0; i < maxPages; i++) {
+                for (let j = 0; j < pdfPagesArr.length; j++) {
+                    if (i < pdfPagesArr[j].length) {
+                        interleavedDoc.addPage(pdfPagesArr[j][i]);
+                    }
                 }
             }
 
@@ -132,10 +250,9 @@
 
             const a = document.createElement("a");
             a.href = interleavedUrl;
-            a.download = `interleaved-${pdf1.name.replace(".pdf", "")}-${pdf2.name.replace(".pdf", "")}.pdf`;
+            a.download = `interleaved-${Date.now()}.pdf`;
             a.click();
 
-            // Delay in case the download is too fast
             setTimeout(() => {
                 loadingModal.hide();
             }, 1000);
