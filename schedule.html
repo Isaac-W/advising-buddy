@@ -530,7 +530,7 @@
 
             body += `I've reviewed your schedule, and you're currently enrolled in ${curStudent.credits} credit${curStudent.credits === 1 ? "" : "s"}.\n`;
             if (curStudent.credits == 0) {
-                body += "Please enroll in classes as soon as possible! You need 12 credits to be full-time, and ~15 credits to graduate on time.\n";
+                body += "Please enroll in classes as soon as possible! You need at least 12 credits to be full-time, and ~15 credits to graduate on time.\n";
             } else if (curStudent.credits < 12) {
                 body += "You're currently enrolled in less than 12 credits, which is below the full-time requirement.\n";
             }
