@@ -169,6 +169,7 @@
                     <p class="lead">Schedule:</p>
                     <button id="copy-btn" class="btn btn-primary" type="button">Copy Image</button>
                     <button id="download-btn" class="btn btn-secondary" type="button">Download Image</button>
+                    <button id="download-pdf-btn" class="btn btn-secondary" type="button">Download PDF</button>
                 </div>
             </div>
             <div class="col-4">
@@ -330,6 +331,7 @@
 
         const copyBtn = document.getElementById("copy-btn");
         const downloadBtn = document.getElementById("download-btn");
+        const downloadPdfBtn = document.getElementById("download-pdf-btn");
         const downloadAllBtn = document.getElementById("download-all-btn");
 
         async function getScheduleCanvas(width = 1600, padding = 24) {
@@ -382,11 +384,62 @@
 
             // Create link and download
             const a = document.createElement("a");
-            a.download = `${curStudent.eid}-schedule.png`;
+            a.download = `${curStudent.eid}_schedule.png`;
             a.href = pngDataUrl;
             a.click();
 
             downloadBtn.disabled = false;
+        });
+
+        async function makeSchedulePdf(pdfDoc = null) {
+            if (!pdfDoc) {
+                pdfDoc = await PDFDocument.create();
+            }
+
+            const ppi = 72; // Default pixels per inch for PDF-LIB
+            const margin = 0.5 * ppi; // 0.5 inch margin
+            const pageSizePortrait = PageSizes.Letter;
+            const pageSizeLandscape = [pageSizePortrait[1], pageSizePortrait[0]];
+
+            // Get the schedule canvas
+            const canvas = await getScheduleCanvas(1600, 40); // For some reason, enabling modal causes calendar to be cut off (40 is the magic number)
+            const image = await pdfDoc.embedPng(canvas.toDataURL("image/png"));
+            
+            // Create a new page
+            const page = pdfDoc.addPage(pageSizeLandscape);
+            const { width, height } = page.getSize();
+            const scale = Math.min((width - 2 * margin) / canvas.width, (height - 2 * margin) / canvas.height);
+
+            // Draw the image on the PDF page
+            page.drawImage(image, {
+                x: margin,
+                y: height - margin - canvas.height * scale,
+                width: canvas.width * scale,
+                height: canvas.height * scale,
+            });
+
+            return pdfDoc;
+        }
+
+        async function savePdf(pdfDoc, filename) {
+            const pdfBytes = await pdfDoc.save();
+            const pdfDataUrl = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
+
+            // Create link and download
+            const a = document.createElement("a");
+            a.download = filename;
+            a.href = pdfDataUrl;
+            a.click();
+        }
+
+        downloadPdfBtn.addEventListener("click", async () => {
+            downloadPdfBtn.disabled = true;
+
+            const pdfDoc = await makeSchedulePdf();
+            await savePdf(pdfDoc, `${curStudent.eid}_schedule.pdf`);
+
+            downloadPdfBtn.disabled = false;
+            toast("Download complete.", "success");
         });
 
         downloadAllBtn.addEventListener("click", async () => {
@@ -404,42 +457,20 @@
 
             // Create PDF
             const pdfDoc = await PDFDocument.create();
-            const ppi = 72; // Default pixels per inch for PDF-LIB
-            const margin = 0.5 * ppi; // 0.5 inch margin
-            const pageSizePortrait = PageSizes.Letter;
-            const pageSizeLandscape = [pageSizePortrait[1], pageSizePortrait[0]];
 
             // Loop through all students in selector
             for (let i = 0; i < studentSelect.options.length; i++) {
                 const studentId = studentSelect.options[i].value;
                 updatePage(studentId, false);
 
-                const canvas = await getScheduleCanvas(1600, 40); // For some reason, enabling modal causes calendar to be cut off (40 is the magic number)
-                const image = await pdfDoc.embedPng(canvas.toDataURL("image/png"));
-
-                const page = pdfDoc.addPage(pageSizeLandscape);
-                const { width, height } = page.getSize();
-                const scale = Math.min((width - 2 * margin) / canvas.width, (height - 2 * margin) / canvas.height);
-
-                page.drawImage(image, {
-                    x: margin,
-                    y: height - margin - canvas.height * scale,
-                    width: canvas.width * scale,
-                    height: canvas.height * scale,
-                });
+                await makeSchedulePdf(pdfDoc);
             }
 
             toast("Saving PDF...", "info");
 
             // Save and download PDF
             setTimeout(async () => {
-                const pdfBytes = await pdfDoc.save();
-                const pdfDataUrl = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
-
-                const a = document.createElement("a");
-                a.download = "all_schedules.pdf";
-                a.href = pdfDataUrl;
-                a.click();
+                await savePdf(pdfDoc, "all_schedules.pdf");
 
                 // Reset state
                 studentSelect.value = prevId;
