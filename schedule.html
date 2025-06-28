@@ -139,7 +139,8 @@
             }
 
             body {
-                zoom: 75%; /* Magic value that makes it fit */
+                zoom: 75%;
+                /* Magic value that makes it fit */
             }
         }
     </style>
@@ -187,7 +188,8 @@
                     <button id="print-btn" class="btn btn-primary" type="button">Print Schedule</button>
                     <button id="copy-btn" class="btn btn-secondary" type="button">Copy Image</button>
                     <button id="download-btn" class="btn btn-secondary" type="button" hidden>Download Image</button>
-                    <button id="compose-email-btn" class="btn btn-info" type="button">Compose Email</button>
+                    <a id="compose-email-btn" class="btn btn-info" href="#">Compose Email</a>
+                    <button id="copy-email-text" class="btn btn-secondary" type="button">Copy Email Text</button>
                 </div>
             </div>
             <div class="col-4">
@@ -250,7 +252,7 @@
         import html2canvas from "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm";
         import { PDFDocument, PageSizes } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
 
-        const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
+        window.loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
             // keyboard: false
         });
@@ -259,7 +261,7 @@
         //  Initialize state
         //
 
-        const students = JSON.parse(localStorage.getItem("studentData") || "[]");
+        window.students = JSON.parse(localStorage.getItem("studentData") || "[]");
         if (students.length === 0) {
             toast("No student data found. Please upload student data.", "error");
             window.location.href = "index.html";
@@ -269,7 +271,7 @@
         //  Student selector
         //
 
-        let curStudent = null;
+        window.curStudent = null;
 
         const studentSelect = document.getElementById("studentSelect");
         students.forEach((student, index) => {
@@ -295,8 +297,9 @@
             updateQueryString(id, newPage);
             updateTitle(student);
             updateLinks(id);
-
+            
             showSchedule(student);
+            updateMailto(student); // Relies on showSchedule
         }
 
         function updateQueryString(id, addHistory = true) {
@@ -324,6 +327,49 @@
                 url.searchParams.set("id", id);
                 link.href = url.href;
             });
+        }
+
+        function updateMailto(student) {
+            let address = student.email || "";
+            let subject = "From your Academic Advisor: Schedule Check";
+            let body = createEmailBody(student);
+
+            // Compose mailto link
+            const composeEmailBtn = document.getElementById("compose-email-btn");
+            composeEmailBtn.href = `mailto:${address}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        }
+
+        function createEmailBody(student) {
+            // Dynamically create email body
+            let body = `Hi ${student.preferredName},\n\n`;
+
+            body += `I've reviewed your schedule, and you're currently enrolled in ${student.credits} credit${student.credits === 1 ? "" : "s"}.\n`;
+            if (student.credits == 0) {
+                body += "Please enroll in classes as soon as possible! You need at least 12 credits to be full-time, and ~15 credits to graduate on time.\n";
+            } else if (student.credits < 12) {
+                body += "You're currently enrolled in less than 12 credits, which is below the full-time requirement.\n";
+            }
+            body += "\n";
+
+            body += "Enrollment Checklist:\n";
+            const checklistItems = document.querySelectorAll("#checklist-items li");
+            for (const li of checklistItems) {
+                body += ` -`;
+                for (const child of li.children) {
+                    body += ` ${child.textContent}`;
+                }
+                body += `\n`;
+            }
+            body += "\n";
+
+            body += "Other notes:\n";
+            body += ` - \n`;
+            body += `\n`;
+
+            body += `Please let me know if you have any questions or concerns.\n\n` +
+                `Best,\n`;
+
+            return body;
         }
 
         //
@@ -518,65 +564,22 @@
             }, 300); // Delay to allow toast to show
         });
 
-        const composeEmailBtn = document.getElementById("compose-email-btn");
-        composeEmailBtn.addEventListener("click", async () => {
-            composeEmailBtn.disabled = true;
+        const copyEmailTextBtn = document.getElementById("copy-email-text");
+        copyEmailTextBtn.addEventListener("click", () => {
+            copyEmailTextBtn.disabled = true;
 
-            let address = curStudent.email || "";
-            let subject = "From your Academic Advisor: Schedule Check";
-
-            // Dynamically create email body
-            let body = `Hi ${curStudent.preferredName},\n\n`;
-
-            body += `I've reviewed your schedule, and you're currently enrolled in ${curStudent.credits} credit${curStudent.credits === 1 ? "" : "s"}.\n`;
-            if (curStudent.credits == 0) {
-                body += "Please enroll in classes as soon as possible! You need at least 12 credits to be full-time, and ~15 credits to graduate on time.\n";
-            } else if (curStudent.credits < 12) {
-                body += "You're currently enrolled in less than 12 credits, which is below the full-time requirement.\n";
-            }
-            body += "\n";
-
-            body += "Enrollment Checklist:\n";
-            const checklistItems = document.querySelectorAll("#checklist-items li");
-            for (const li of checklistItems) {
-                body += ` -`;
-                for (const child of li.children) {
-                    body += ` ${child.textContent}`;
-                }
-                body += `\n`;
-            }
-            body += "\n";
-
-            body += "Other notes:\n";
-            body += ` - \n`;
-            body += `\n`;
-
-            body += `Please let me know if you have any questions or concerns.\n\n` +
-                `Best,\n`;
-
-            // // Copy the email body to clipboard
-            // try {
-            //     await navigator.clipboard.writeText(body);
-            //     toast("Email body copied to clipboard.", "success");
-            // } catch (err) {
-            //     console.error("Failed to copy email body to clipboard:", err);
-            //     toast("Failed to copy email body to clipboard.", "error");
-            // }
-
-            // Copy the schedule image to clipboard
-            // try {
-            //     await copyImageToClipboard();
-            //     toast("Image copied to clipboard.", "success");
-            // } catch (err) {
-            //     console.error("Failed to copy image to clipboard:", err);
-            //     toast("Failed to copy image to clipboard.", "error");
-            // }
-
-            // Compose mailto link
-            const mailtoLink = `mailto:${address}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            window.location.href = mailtoLink;
-
-            composeEmailBtn.disabled = false;
+            const emailBody = createEmailBody(curStudent);
+            navigator.clipboard.writeText(emailBody)
+                .then(() => {
+                    toast("Email text copied to clipboard.", "success");
+                })
+                .catch((err) => {
+                    console.error(err);
+                    toast("Failed to copy email text.", "error");
+                })
+                .finally(() => {
+                    copyEmailTextBtn.disabled = false;
+                });
         });
 
         //
@@ -614,7 +617,7 @@
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
                 e.preventDefault();
-                
+
                 if (e.key === "ArrowLeft") {
                     if (studentSelect.selectedIndex === 0) {
                         return;
