@@ -14418,6 +14418,13 @@ export function getCourseCredits(courseCode, defaultToMin = true) {
         } else {
             return parseFloat(course.credits);
         }
+    } else {
+        // Try without (H,A,B,C) suffix
+        const baseCourseCode = courseCode.replace(/(H|A|B|C)$/, '');
+        if (baseCourseCode !== courseCode) {
+            return getCourseCredits(baseCourseCode, defaultToMin);
+        }
     }
+
     return 0;
 }
