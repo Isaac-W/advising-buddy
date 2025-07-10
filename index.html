@@ -48,7 +48,7 @@
                     <label class="form-label" for="schedType">File Format</label>
                     <select class="form-select" aria-label="Schedule Type" id="schedType" data-state="schedType">
                         <option value="fya" selected>JCAP03 Advising Record PDF</option>
-                        <!-- <option value="sa">Student Administration CSV</option> -->
+                        <option value="crm">CRM Advisee Data Export</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -89,6 +89,7 @@
         import toast from "./scripts/toast.mjs";
         import Stateful from "./scripts/stateful.mjs";
         import { parsePdf } from "./scripts/fyaParser.mjs";
+        import { parseCrm } from "./scripts/crmParser.mjs";
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
@@ -121,8 +122,20 @@
                         loadingModal.hide();
                     }, 1000);
                 });
-            } else if (fileType === "sa") {
-                toast("Not yet implemented.");
+            } else if (fileType === "crm") {
+                loadingModal.show();
+
+                parseCrm(document.getElementById("dataFile").files[0]).then((data) => {
+                    localStorage.setItem("studentData", JSON.stringify(data));
+                    toast("File uploaded successfully. Redirecting...", "success");
+                    window.location.href = "schedule.html";
+                }).catch((err) => {
+                    toast(err, "error");
+                }).finally(() => {
+                    setTimeout(() => {
+                        loadingModal.hide();
+                    }, 1000);
+                });                
             } else {
                 toast("Invalid file type.", "error");
             }

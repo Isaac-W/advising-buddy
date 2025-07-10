@@ -54,7 +54,7 @@ export function createCalendar(calendarEl) {
 // Converts a course into an array of FullCalendar events
 function createEventsForCourse(course) {
     const event = {
-        title: `${course.id} (Sec ${course.section})`,
+        title: `${course.full_id}` + (course.section ? ` (Sec ${course.section})` : ""),
     };
 
     // Check if event has no start time (all day/online)
