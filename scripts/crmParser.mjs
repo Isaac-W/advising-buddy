@@ -12,6 +12,33 @@ function parseEid(email) {
     return email.split('@')[0];
 }
 
+function findMajor(studentPrograms) {
+    const majors = studentPrograms.filter(program => program.description && program.description.includes("Major"));
+    if (majors.length === 0) {
+        return "Unknown"; // Default if no major found
+    }
+
+    if (majors.length > 1) {
+        console.warn("Multiple majors found for student, using the first one:", majors);
+        // TODO: Handle multiple majors more gracefully
+    }
+
+    return majors[0].name;
+}
+
+function findMinor(studentPrograms) {
+    const minors = studentPrograms.filter(program => program.description && program.description.includes("Minor"));
+    if (minors.length === 0) {
+        return ""; // Default if no minor found
+    }
+
+    if (minors.length > 1) {
+        console.warn("Multiple minors found for student, using the first one:", minors);
+    }
+
+    return minors[0].name;
+}
+
 function findAleksScore(tests) {
     const foundTests = tests.filter(test =>
         test.type === "Math Placement Test" && test.subject.startsWith("ALEKS")
@@ -115,8 +142,8 @@ function formatStudentData(student) {
         lastName: student.lastName,
         fullName: student.fullName,
         email: student.email,
-        major: "Computer Science", // TODO: Support other majors
-        minor: "", // TODO: Support minors
+        major: findMajor(student.studentPrograms),
+        minor: findMinor(student.studentPrograms),
         aleks: findAleksScore(student.testScores),
         transfer: [], // TODO: Determine transfer credits
         tests: formatAPTests(student.testScores),
