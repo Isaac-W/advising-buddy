@@ -181,6 +181,10 @@ function checkCS(student, classes, transfer) {
         } else if (classes.has("CS149")) {
             status = "☑️";
             current = "CS149";
+        } else if (classes.has("CS159") || classes.has("CS227")) {
+            status = "☑️";
+            current = [...classes.intersection(new Set(["CS159", "CS227"]))].join(", ");
+            message = "Taking advanced CS courses";
         } else {
             status = "🚫";
             message = "Need to take CS149";
@@ -210,7 +214,7 @@ function checkMath(student, classes, transfer) {
             message = `Need to take ${needed.join(" + ")}`;
         } else {
             status = "⚠️";
-            message = `Need to take ${needed.join(" + ")} to stay on track`;
+            message = `Recommend taking ${needed.join(" + ")}`;
         }
     } else {
         if (transferred.length > 0) {
