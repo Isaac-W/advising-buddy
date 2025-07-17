@@ -174,11 +174,11 @@
                     mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.Subject).join(", ") : "";
                     row.appendChild(mathCell);
 
-                    if (csCell.textContent.includes("CS-149")) {
+                    if (csCell.textContent.includes("CS-")) {
                         csCell.classList.add("table-success");
                     }
 
-                    if (mathCell.textContent.includes("MATH-155")) {
+                    if (mathCell.textContent.includes("MATH-155") || mathCell.textContent.includes("MATH-199")) {
                         mathCell.classList.add("table-info");
                     }
 
@@ -224,7 +224,7 @@
 
                     // OTHER CHECKS
 
-                    // Find all DescNames that include brackets at the end
+                    // Find all DescNames that include brackets at the end (these are GenEds)
                     const genEdCourses = courses.filter(c => c.DescName && c.DescName.endsWith("]"));
                     courses = courses.filter(c => !genEdCourses.includes(c));
 
