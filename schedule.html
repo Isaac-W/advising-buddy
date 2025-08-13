@@ -160,11 +160,11 @@
                         <a id="start-link" class="nav-link" href="index.html">Start Here</a>
                     </li>
                     <li class="nav-item">
+                        <a id="advisees-link" class="nav-link" href="advisees.html">Advisees</a>
+                    </li>
+                    <li class="nav-item">
                         <a id="schedule-link" class="nav-link active" href="schedule.html">Schedule Checker</a>
                     </li>
-                    <!-- <li class="nav-item">
-                        <a id="gened-link" class="nav-link" href="geneds.html">GenEd Requirements</a>
-                    </li> -->
                     <li class="nav-item">
                         <a id="tools-link" class="nav-link" href="tools.html">Tools</a>
                     </li>
@@ -615,6 +615,11 @@
         //
 
         document.addEventListener("keydown", (e) => {
+            // Check if modifier key is pressed
+            if (e.ctrlKey || e.shiftKey || e.metaKey || e.altKey) {
+                return;
+            }
+
             if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
                 e.preventDefault();
 

@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <title>Advising Buddy - Test CRM Export</title>
+    <title>Advising Buddy - Advisees</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="https://fav.farm/📅">
@@ -20,48 +20,55 @@
                 aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                    <li class="nav-item">
+                        <a id="start-link" class="nav-link" href="index.html">Start Here</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="advisees-link" class="nav-link active" href="advisees.html">Advisees</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="schedule-link" class="nav-link" href="schedule.html">Schedule Checker</a>
+                    </li>
+                    <li class="nav-item">
+                        <a id="tools-link" class="nav-link" href="tools.html">Tools</a>
+                    </li>
+                </ul>
+            </div>
         </div>
     </nav>
 
     <main class="container">
         <div class="bg-body-tertiary p-5 rounded">
-            <h1>CRM Student Table View</h1>
-            <p class="lead">Select your CRM student data export (.json), then click Upload to continue.</p>
-            <form>
-                <div class="mb-3">
-                    <label class="form-label" for="dataFile">CRM Data File</label>
-                    <input type="file" class="form-control" id="dataFile" accept=".json,application/json">
-                </div>
-                <button type="submit" class="btn btn-primary" id="submitBtn">Submit</button>
-            </form>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table table-light table-striped table-bordered mt-5 d-none" id="studentsTable">
-                <thead>
-                    <tr>
-                        <th colspan="3" class="text-center" scope="colgroup">Info</th>
-                        <th colspan="2" class="text-center" scope="colgroup">Major Courses</th>
-                        <th colspan="3" class="text-center" scope="colgroup">Madison Foundations</th>
-                        <th colspan="2" class="text-center" scope="colgroup">Other</th>
-                    </tr>
-                    <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col">Student ID</th>
-                        <th scope="col">Credits</th>
-                        <th scope="col">CS Course</th>
-                        <th scope="col">MATH Course</th>
-                        <th scope="col">Critical Thinking</th>
-                        <th scope="col">Communication</th>
-                        <th scope="col">Writing</th>
-                        <th scope="col">GenEds</th>
-                        <th scope="col">Electives</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Rows will be inserted here dynamically -->
-                </tbody>
-            </table>
+            <h1>Advisees</h1>
+            <div class="table-responsive">
+                <table class="table table-light table-striped table-bordered mt-5 d-none" id="studentsTable">
+                    <thead>
+                        <tr>
+                            <th colspan="3" class="text-center" scope="colgroup">Info</th>
+                            <th colspan="2" class="text-center" scope="colgroup">Major Courses</th>
+                            <th colspan="3" class="text-center" scope="colgroup">Madison Foundations</th>
+                            <th colspan="2" class="text-center" scope="colgroup">Other</th>
+                        </tr>
+                        <tr>
+                            <th scope="col">Student</th>
+                            <th scope="col">ID</th>
+                            <th scope="col">Credits</th>
+                            <th scope="col">CS Course</th>
+                            <th scope="col">MATH Course</th>
+                            <th scope="col">Critical Thinking</th>
+                            <th scope="col">Communication</th>
+                            <th scope="col">Writing</th>
+                            <th scope="col">GenEds</th>
+                            <th scope="col">Electives</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be inserted here dynamically -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
 
@@ -90,164 +97,155 @@
         import toast from "./scripts/toast.mjs";
         import Stateful from "./scripts/stateful.mjs";
         import { allCourses, getCourseCredits } from "./scripts/courses.mjs"
-
-        let state = new Stateful();
-        state.initialize();
+        import { genEdClassLookup } from "./scripts/geneds.mjs";
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
         });
 
-        function getTotalCredits(courses) {
-            return courses.reduce((total, course) => (total + getCourseCredits(course.Subject.replace("-", ""))), 0);
+        //
+        //  Initialize state
+        //
+
+        window.students = JSON.parse(localStorage.getItem("studentData") || "[]");
+        if (students.length === 0) {
+            toast("No student data found. Please upload student data.", "error");
+            window.location.href = "index.html";
         }
 
-        document.getElementById("submitBtn").addEventListener("click", async function (e) {
-            e.preventDefault();
+        //
+        //  Populate table
+        //
 
-            if (document.getElementById("dataFile").files.length === 0) {
-                toast("Please select a file to upload.", "error");
-                return;
-            }
+        for (let student of students) {
+            const row = document.createElement("tr");
 
-            const file = document.getElementById("dataFile").files[0];
+            const nameCell = document.createElement("td");
+            nameCell.innerHTML = `<a href='schedule.html?id=${student.id}'>${student.fullName}</a>`;
+            row.appendChild(nameCell);
 
-            try {
-                const data = JSON.parse(await file.text());
-                for (let student of data.advisees) {
-                    let courses = student.classSchedule.filter(c => c.Course);
+            const idCell = document.createElement("td");
+            idCell.textContent = student.id;
+            row.appendChild(idCell);
 
-                    // Remove entries with duplicate Course values
-                    const seenCourses = new Set();
-                    courses = courses.filter(c => {
-                        if (seenCourses.has(c.Course)) {
-                            return false;
-                        } else {
-                            seenCourses.add(c.Course);
-                            return true;
-                        }
-                    });
+            // CREDITS CHECK
 
-                    const row = document.createElement("tr");
+            let courses = student.schedule.filter(c => c.full_id);
+            let totalCredits = 0;
 
-                    const nameCell = document.createElement("td");
-                    nameCell.textContent = student.fullName;
-                    row.appendChild(nameCell);
-
-                    const idCell = document.createElement("td");
-                    idCell.textContent = student.studentId;
-                    row.appendChild(idCell);
-
-                    // CREDITS CHECK
-
-                    const totalCredits = getTotalCredits(courses);
-
-                    const numCreditsCell = document.createElement("td");
-                    numCreditsCell.textContent = totalCredits;
-                    row.appendChild(numCreditsCell);
-
-                    if (totalCredits === 0) {
-                        row.classList.add("table-danger");
-                    } else if (totalCredits < 12) {
-                        numCreditsCell.classList.add("table-danger");
-                    } else if (totalCredits < 14) {
-                        numCreditsCell.classList.add("table-warning");
-                    } else if (totalCredits >= 17) {
-                        numCreditsCell.classList.add("table-primary");
-                    }
-
-                    // MAJOR CHECK
-
-                    // Find specific cell with list of all course subjects starting with CS
-                    const csCourses = courses.filter(c => c.Subject && c.Subject.startsWith("CS"));
-                    courses = courses.filter(c => !csCourses.includes(c));
-
-                    const csCell = document.createElement("td");
-                    csCell.textContent = csCourses.length > 0 ? csCourses.map(c => c.Subject).join(", ") : "";
-                    row.appendChild(csCell);
-
-                    // Do it for MATH courses
-                    const mathCourses = courses.filter(c => c.Subject && c.Subject.startsWith("MATH"));
-                    courses = courses.filter(c => !mathCourses.includes(c));
-
-                    const mathCell = document.createElement("td");
-                    mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.Subject).join(", ") : "";
-                    row.appendChild(mathCell);
-
-                    if (csCell.textContent.includes("CS-")) {
-                        csCell.classList.add("table-success");
-                    }
-
-                    if (mathCell.textContent.includes("MATH-155") || mathCell.textContent.includes("MATH-199")) {
-                        mathCell.classList.add("table-info");
-                    }
-
-                    if (csCourses.length === 0 && mathCourses.length === 0) {
-                        csCell.classList.add("table-danger");
-                        mathCell.classList.add("table-danger");
-                    }
-
-                    // MADISON FOUNDATIONS CHECK
-
-                    // Find all DescNames with [C1CT]
-                    const ctCourses = courses.filter(c => c.DescName && c.DescName.includes("[C1CT]"));
-                    courses = courses.filter(c => !ctCourses.includes(c));
-
-                    const ctCell = document.createElement("td");
-                    ctCell.textContent = ctCourses.length > 0 ? ctCourses.map(c => c.Subject).join(", ") : "";
-                    row.appendChild(ctCell);
-
-                    // Find all DescNames with [C1HC]
-                    const commCourses = courses.filter(c => c.DescName && c.DescName.includes("[C1HC]"));
-                    courses = courses.filter(c => !commCourses.includes(c));
-
-                    const commCell = document.createElement("td");
-                    commCell.textContent = commCourses.length > 0 ? commCourses.map(c => c.Subject).join(", ") : "";
-                    row.appendChild(commCell);
-
-                    // Find all DescNames with [C1W]
-                    const writingCourses = courses.filter(c => c.DescName && c.DescName.includes("[C1W]"));
-                    courses = courses.filter(c => !writingCourses.includes(c));
-
-                    const writingCell = document.createElement("td");
-                    writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.Subject).join(", ") : "";
-                    row.appendChild(writingCell);
-
-                    if (ctCourses.length === 0 && commCourses.length === 0) {
-                        ctCell.classList.add("table-danger");
-                        commCell.classList.add("table-danger");
-
-                        if (writingCourses.length === 0) {
-                            writingCell.classList.add("table-danger");
-                        }
-                    }
-
-                    // OTHER CHECKS
-
-                    // Find all DescNames that include brackets at the end (these are GenEds)
-                    const genEdCourses = courses.filter(c => c.DescName && c.DescName.endsWith("]"));
-                    courses = courses.filter(c => !genEdCourses.includes(c));
-
-                    const genEdCell = document.createElement("td");
-                    genEdCell.textContent = genEdCourses.length > 0 ? genEdCourses.map(c => c.Subject).join(", ") : "";
-                    row.appendChild(genEdCell);
-
-                    // Remaining courses are electives
-                    const electiveCell = document.createElement("td");
-                    electiveCell.textContent = courses.length > 0 ? courses.map(c => c.Subject).join(", ") : "";
-                    row.appendChild(electiveCell);
-
-                    // Append the row to the table body
-                    document.querySelector("#studentsTable tbody").appendChild(row);
+            // Count credits from unique courses
+            const seenCourses = new Set();
+            const uniqueCourses = [];
+            for (let course of courses) {
+                if (!seenCourses.has(course.id)) {
+                    seenCourses.add(course.id);
+                    totalCredits += course.credits;
+                    uniqueCourses.push(course);
                 }
-
-                // Show the table
-                document.getElementById("studentsTable").classList.remove("d-none");
-            } catch (err) {
-                toast("Error parsing JSON file: " + err.message, "error");
-                return;
             }
-        });
+            courses = uniqueCourses;
+
+            const numCreditsCell = document.createElement("td");
+            numCreditsCell.textContent = totalCredits;
+            row.appendChild(numCreditsCell);
+
+            if (totalCredits === 0) {
+                row.classList.add("table-danger"); // Highlight WHOLE ROW
+            } else if (totalCredits < 12) {
+                numCreditsCell.classList.add("table-danger");
+            } else if (totalCredits < 14) {
+                numCreditsCell.classList.add("table-warning");
+            } else if (totalCredits >= 17) {
+                numCreditsCell.classList.add("table-primary");
+            }
+
+            // MAJOR CHECK
+
+            // Find specific cell with list of all course subjects starting with CS
+            const csCourses = courses.filter(c => c.id.startsWith("CS"));
+            courses = courses.filter(c => !csCourses.includes(c));
+
+            const csCell = document.createElement("td");
+            csCell.textContent = csCourses.length > 0 ? csCourses.map(c => c.id).join(", ") : "";
+            row.appendChild(csCell);
+
+            // Do it for MATH courses
+            const mathCourses = courses.filter(c => c.id.startsWith("MATH"));
+            courses = courses.filter(c => !mathCourses.includes(c));
+
+            const mathCell = document.createElement("td");
+            mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.id).join(", ") : "";
+            row.appendChild(mathCell);
+
+            if (csCell.textContent.includes("CS")) {
+                csCell.classList.add("table-success");
+            }
+
+            if (mathCell.textContent.includes("MATH155") || mathCell.textContent.includes("MATH199")) {
+                mathCell.classList.add("table-info");
+            }
+
+            if (csCourses.length === 0 && mathCourses.length === 0) {
+                csCell.classList.add("table-danger");
+                mathCell.classList.add("table-danger");
+            }
+
+            // MADISON FOUNDATIONS CHECK
+
+            // Find all [C1CT] courses
+            const ctCourses = courses.filter(c => genEdClassLookup[c.id] === "C1CT");
+            courses = courses.filter(c => !ctCourses.includes(c));
+
+            const ctCell = document.createElement("td");
+            ctCell.textContent = ctCourses.length > 0 ? ctCourses.map(c => c.id).join(", ") : "";
+            row.appendChild(ctCell);
+
+            // Find all [C1HC] courses
+            const commCourses = courses.filter(c => genEdClassLookup[c.id] === "C1HC");
+            courses = courses.filter(c => !commCourses.includes(c));
+
+            const commCell = document.createElement("td");
+            commCell.textContent = commCourses.length > 0 ? commCourses.map(c => c.id).join(", ") : "";
+            row.appendChild(commCell);
+
+            // Find all [C1W] courses
+            const writingCourses = courses.filter(c => genEdClassLookup[c.id] === "C1W");
+            courses = courses.filter(c => !writingCourses.includes(c));
+
+            const writingCell = document.createElement("td");
+            writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.id).join(", ") : "";
+            row.appendChild(writingCell);
+
+            if (ctCourses.length === 0 && commCourses.length === 0) {
+                ctCell.classList.add("table-danger");
+                commCell.classList.add("table-danger");
+
+                if (writingCourses.length === 0) {
+                    writingCell.classList.add("table-danger");
+                }
+            }
+
+            // OTHER CHECKS
+
+            // Find all GenEds
+            const genEdCourses = courses.filter(c => genEdClassLookup[c.id] !== undefined);
+            courses = courses.filter(c => !genEdCourses.includes(c));
+
+            const genEdCell = document.createElement("td");
+            genEdCell.textContent = genEdCourses.length > 0 ? genEdCourses.map(c => c.id).join(", ") : "";
+            row.appendChild(genEdCell);
+
+            // Remaining courses are electives
+            const electiveCell = document.createElement("td");
+            electiveCell.textContent = courses.length > 0 ? courses.map(c => c.id).join(", ") : "";
+            row.appendChild(electiveCell);
+
+            // Append the row to the table body
+            document.querySelector("#studentsTable tbody").appendChild(row);
+        }
+
+        // Show the table
+        document.getElementById("studentsTable").classList.remove("d-none");
     </script>
 </body>
 

@@ -27,7 +27,7 @@ This is an example of the data parsed from the PDF file:
         {
             "id": "CS149",
             "honors": false,
-            "full_id": "CS149",
+            "full_id": "CS149", // Includes H for honors
             "name": "INTRODUCTION TO PROGRAMMING",
             "credits": 3,
             "section": "2",
