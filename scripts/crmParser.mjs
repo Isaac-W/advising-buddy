@@ -3,9 +3,11 @@ import { getCourseCredits } from "./courses.mjs";
 export async function parseCrm(file) {
     const rawData = await file.text();
     const crmData = JSON.parse(rawData);
-    const students = crmData.advisees || [];
+    const crmAdvisees = crmData.advisees || [];
+    const students = crmAdvisees.map(formatStudentData);
+    students.sort((a, b) => a.fullName.localeCompare(b.fullName));
 
-    return students.map(formatStudentData);
+    return students;
 }
 
 function parseEid(email) {

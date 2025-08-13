@@ -6,6 +6,7 @@ export async function parsePdf(file) {
     const pdf = await pdfjs.getDocument(pdfData).promise;
     const pages = await getPages(pdf);
     const students = pages.map(parseStudentData);
+    students.sort((a, b) => a.fullName.localeCompare(b.fullName));
     return students;
 }
 
