@@ -186,7 +186,7 @@
             courses = courses.filter(c => !csCourses.includes(c));
 
             const csCell = document.createElement("td");
-            csCell.textContent = csCourses.length > 0 ? csCourses.map(c => c.id).join(", ") : "";
+            csCell.textContent = csCourses.length > 0 ? csCourses.map(c => c.full_id).join(", ") : "";
             row.appendChild(csCell);
 
             // Do it for MATH courses
@@ -194,7 +194,7 @@
             courses = courses.filter(c => !mathCourses.includes(c));
 
             const mathCell = document.createElement("td");
-            mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.id).join(", ") : "";
+            mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.full_id).join(", ") : "";
             row.appendChild(mathCell);
 
             if (csCell.textContent.includes("CS")) {
@@ -217,7 +217,7 @@
             courses = courses.filter(c => !ctCourses.includes(c));
 
             const ctCell = document.createElement("td");
-            ctCell.textContent = ctCourses.length > 0 ? ctCourses.map(c => c.id).join(", ") : "";
+            ctCell.textContent = ctCourses.length > 0 ? ctCourses.map(c => c.full_id).join(", ") : "";
             row.appendChild(ctCell);
 
             // Find all [C1HC] courses
@@ -225,7 +225,7 @@
             courses = courses.filter(c => !commCourses.includes(c));
 
             const commCell = document.createElement("td");
-            commCell.textContent = commCourses.length > 0 ? commCourses.map(c => c.id).join(", ") : "";
+            commCell.textContent = commCourses.length > 0 ? commCourses.map(c => c.full_id).join(", ") : "";
             row.appendChild(commCell);
 
             // Find all [C1W] courses
@@ -233,7 +233,7 @@
             courses = courses.filter(c => !writingCourses.includes(c));
 
             const writingCell = document.createElement("td");
-            writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.id).join(", ") : "";
+            writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.full_id).join(", ") : "";
             row.appendChild(writingCell);
 
             if (ctCourses.length === 0 && commCourses.length === 0) {
@@ -252,12 +252,12 @@
             courses = courses.filter(c => !genEdCourses.includes(c));
 
             const genEdCell = document.createElement("td");
-            genEdCell.textContent = genEdCourses.length > 0 ? genEdCourses.map(c => c.id).join(", ") : "";
+            genEdCell.textContent = genEdCourses.length > 0 ? genEdCourses.map(c => c.full_id).join(", ") : "";
             row.appendChild(genEdCell);
 
             // Remaining courses are electives
             const electiveCell = document.createElement("td");
-            electiveCell.textContent = courses.length > 0 ? courses.map(c => c.id).join(", ") : "";
+            electiveCell.textContent = courses.length > 0 ? courses.map(c => c.full_id).join(", ") : "";
             row.appendChild(electiveCell);
 
             // Append the row to the table body
