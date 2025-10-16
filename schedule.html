@@ -10,7 +10,18 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="styles/toast.css">
+    <link rel="stylesheet" href="styles/custom.css">
     <style>
+        .hover-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .hover-link:hover {
+            text-decoration: underline;
+            color: #0d6efd;
+        }
+
         .fc-col-header-cell-cushion {
             color: black;
             text-decoration: none;
@@ -147,7 +158,7 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-2 d-print-none" data-html2canvas-ignore>
+    <nav class="navbar navbar-expand-md navbar-dark bg-primary mb-2 d-print-none" data-html2canvas-ignore>
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">Advising Buddy</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
@@ -384,7 +395,15 @@
 
         function showSchedule(student) {
             console.log(student);
-            scheduleTitleEl.textContent = `${student.preferredName} ${student.lastName}'s Schedule (${student.id})`;
+            scheduleTitleEl.textContent = '';
+
+            const nameLink = document.createElement('a');
+            nameLink.href = `mailto:${student.email}`;
+            nameLink.className = 'hover-link';
+            nameLink.textContent = `${student.preferredName} ${student.lastName}`;
+            scheduleTitleEl.appendChild(nameLink);
+            scheduleTitleEl.appendChild(document.createTextNode(`'s Schedule (${student.id})`));
+
             populateChecklist(checklistEl, student);
             calendar.displaySchedule(student);
         }

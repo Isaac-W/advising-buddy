@@ -10,10 +10,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf_viewer.min.css">
     <link rel="stylesheet" href="styles/toast.css">
+    <link rel="stylesheet" href="styles/custom.css">
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+    <nav class="navbar navbar-expand-md navbar-dark bg-primary mb-4">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.html">Advising Buddy</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse"
@@ -39,14 +40,14 @@
         </div>
     </nav>
 
-    <main class="container">
+    <main class="container-fluid">
         <div class="bg-body-tertiary p-5 rounded">
-            <h1>Advisees</h1>
+            <h1>First Year Advisees</h1>
             <div class="table-responsive">
                 <table class="table table-light table-striped table-bordered mt-5 d-none" id="studentsTable">
                     <thead>
                         <tr>
-                            <th colspan="3" class="text-center" scope="colgroup">Info</th>
+                            <th colspan="4" class="text-center" scope="colgroup">Info</th>
                             <th colspan="2" class="text-center" scope="colgroup">Major Courses</th>
                             <th colspan="3" class="text-center" scope="colgroup">Madison Foundations</th>
                             <th colspan="2" class="text-center" scope="colgroup">Other</th>
@@ -54,9 +55,10 @@
                         <tr>
                             <th scope="col">Student</th>
                             <th scope="col">ID</th>
+                            <th scope="col">Program</th>
                             <th scope="col">Credits</th>
-                            <th scope="col">CS Course</th>
-                            <th scope="col">MATH Course</th>
+                            <th scope="col">CS Courses</th>
+                            <th scope="col">MATH Courses</th>
                             <th scope="col">Critical Thinking</th>
                             <th scope="col">Communication</th>
                             <th scope="col">Writing</th>
@@ -120,6 +122,8 @@
         for (let student of students) {
             const row = document.createElement("tr");
 
+            // STUDENT INFO
+
             const nameCell = document.createElement("td");
             nameCell.innerHTML = `<a href='schedule.html?id=${student.id}'>${student.fullName}</a>`;
             row.appendChild(nameCell);
@@ -127,6 +131,22 @@
             const idCell = document.createElement("td");
             idCell.textContent = student.id;
             row.appendChild(idCell);
+
+            const programCell = document.createElement("td");
+            programCell.textContent = student.major;
+            if (student.minor) {
+                const minorText = document.createElement("br");
+                programCell.appendChild(minorText);
+
+                const minorStrong = document.createElement("strong");
+                minorStrong.textContent = "Minor: ";
+                programCell.appendChild(minorStrong);
+                
+                const minorSpan = document.createElement("span");
+                minorSpan.textContent = student.minor;
+                programCell.appendChild(minorSpan);
+            }
+            row.appendChild(programCell);
 
             // CREDITS CHECK
 
