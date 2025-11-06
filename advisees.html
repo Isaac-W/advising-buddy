@@ -111,6 +111,9 @@
             backdrop: "static",
         });
 
+        let state = new Stateful();
+        state.initialize();
+
         //
         //  Helper functions
         //
@@ -181,7 +184,6 @@
         // Add change listener
         termSelect.addEventListener("change", function (e) {
             selectedTerm = e.target.value;
-            stateful.setItem("selectedTerm", selectedTerm);
             populateTable(selectedTerm);
         });
 
