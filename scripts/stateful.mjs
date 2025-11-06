@@ -47,6 +47,9 @@ export default class Stateful {
             const value = this.getItem(key);
             if (value !== undefined) {
                 el.value = value;
+                
+                // Fire change event to update UI if needed
+                el.dispatchEvent(new Event('change', { bubbles: true }));
             }
             el.addEventListener('change', (ev) => {
                 this.setItem(key, el.value);
