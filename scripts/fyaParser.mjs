@@ -79,12 +79,17 @@ function parseStudentData(page) {
         id: parseId(text),
         eid: parseEid(text),
         preferredName: parsePreferredName(text),
-        schedule: parseClasses(text),
         aleks: parseAleks(text),
-        credits: parseCredits(text),
         minor: parseMinor(text),
         transfer: parseTransferCredits(text),
         tests: parseTests(text),
+        terms: [
+            {
+                id: "current",
+                credits: parseCredits(text),
+                schedule: parseClasses(text)
+            }
+        ]
     };
 
     [student.firstName, student.lastName] = parseName(text);

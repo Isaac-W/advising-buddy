@@ -53,6 +53,28 @@ function findAleksScore(tests) {
     return Math.max(...foundTests.map(test => test.score));
 }
 
+// Map term names to term IDs
+function getTermId(termName) {
+    // Extract year and semester from term name like "Fall Semester 2025"
+    const match = termName.match(/(Fall|Spring)\s+Semester\s+(\d{4})/i);
+    if (!match) {
+        console.warn("Could not parse term name:", termName);
+        return "current";
+    }
+
+    const semester = match[1];
+    const year = match[2];
+    const yearLastTwo = year.slice(-2);
+
+    // JMU term codes: Year (2 digits) + Semester (1=Spring, 8=Fall)
+    const semesterCode = {
+        "Spring": "1",
+        "Fall": "8"
+    };
+
+    return `1${yearLastTwo}${semesterCode[semester]}`;
+}
+
 function formatSchedule(schedule) {
     const parseDays = (course) => {
         let days = "";
@@ -151,9 +173,27 @@ function formatStudentData(student) {
         tests: formatAPTests(student.testScores),
     };
 
-    // Parse schedule
-    formatted.schedule = formatSchedule(student.classSchedule);
-    formatted.credits = getTotalCredits(formatted.schedule);
+    // Group classes by term
+    const classesByTerm = {};
+    student.classSchedule.forEach(course => {
+        const termName = course.Term || "Unknown Term";
+        const termId = getTermId(termName);
+        
+        if (!classesByTerm[termId]) {
+            classesByTerm[termId] = [];
+        }
+        classesByTerm[termId].push(course);
+    });
+
+    // Format each term
+    formatted.terms = Object.entries(classesByTerm).map(([termId, courses]) => {
+        const formattedSchedule = formatSchedule(courses);
+        return {
+            id: termId,
+            credits: getTotalCredits(formattedSchedule),
+            schedule: formattedSchedule
+        };
+    }).sort((a, b) => b.id.localeCompare(a.id)); // Sort terms in descending order (most recent first)
 
     return formatted;
 }
