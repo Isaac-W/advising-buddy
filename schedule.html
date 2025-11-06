@@ -314,7 +314,7 @@
         }
 
         //
-        //  Initialize state
+        //  Load students
         //
 
         window.students = JSON.parse(localStorage.getItem("studentData") || "[]");
@@ -362,6 +362,13 @@
                 updatePage(curStudent.id, false);
             }
         });
+
+        //
+        //  Initialize stateful
+        //
+
+        let state = new Stateful("details"); // Use same id as advisees.html to sync term selection
+        state.initialize();
 
         //
         //  Student selector

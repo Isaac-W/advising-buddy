@@ -111,9 +111,6 @@
             backdrop: "static",
         });
 
-        let state = new Stateful();
-        state.initialize();
-
         //
         //  Helper functions
         //
@@ -186,6 +183,13 @@
             selectedTerm = e.target.value;
             populateTable(selectedTerm);
         });
+
+        //
+        //  Initialize stateful (after term selector to sync)
+        //
+
+        let state = new Stateful("details"); // Use same id as advisees.html to sync term selection
+        state.initialize();
 
         //
         //  Populate table
