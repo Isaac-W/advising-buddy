@@ -180,6 +180,11 @@
                         <a id="tools-link" class="nav-link" href="tools.html">Tools</a>
                     </li>
                 </ul>
+                <div class="d-flex">
+                    <select class="form-select form-select-sm" id="termSelect" data-state="selectedTerm" style="width: auto;">
+                        <option value="current">Current</option>
+                    </select>
+                </div>
             </div>
         </div>
     </nav>
@@ -263,10 +268,50 @@
         import html2canvas from "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm";
         import { PDFDocument, PageSizes } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
 
-        window.loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
+        const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
             // keyboard: false
         });
+
+        //
+        //  Helper functions
+        //
+
+        // Normalize student data to always have terms
+        function normalizeStudentData(student) {
+            if (!student.terms || student.terms.length === 0) {
+                // Legacy format: wrap credits and schedule into a synthetic "current" term
+                return {
+                    ...student,
+                    terms: [{
+                        id: "current",
+                        credits: student.credits || 0,
+                        schedule: student.schedule || []
+                    }]
+                };
+            }
+            return student;
+        }
+
+        // Get student data with term applied
+        function getStudentWithTerm(student, termId) {
+            const normalized = normalizeStudentData(student);
+            const term = normalized.terms.find(t => t.id === termId);
+            
+            if (!term) {
+                return {
+                    ...student,
+                    credits: 0,
+                    schedule: []
+                };
+            }
+
+            return {
+                ...student,
+                credits: term.credits,
+                schedule: term.schedule
+            };
+        }
 
         //
         //  Initialize state
@@ -277,6 +322,46 @@
             toast("No student data found. Please upload student data.", "error");
             window.location.href = "index.html";
         }
+
+        //
+        //  Term selector
+        //
+
+        window.selectedTerm = "current";
+        
+        const termSelect = document.getElementById("termSelect");
+        
+        // Get all available terms from all students
+        function getAllTerms(students) {
+            const termSet = new Set();
+            students.forEach(student => {
+                const normalized = normalizeStudentData(student);
+                normalized.terms.forEach(term => termSet.add(term.id));
+            });
+            return Array.from(termSet).sort();
+        }
+
+        const availableTerms = getAllTerms(students);
+        
+        // Clear default option and populate with actual terms
+        termSelect.innerHTML = "";
+        availableTerms.forEach(termId => {
+            const option = document.createElement("option");
+            option.value = termId;
+            option.textContent = termId === "current" ? "Current" : termId;
+            termSelect.appendChild(option);
+        });
+
+        // Set default to first term
+        selectedTerm = availableTerms[0] || "current";
+        termSelect.value = selectedTerm;
+
+        termSelect.addEventListener("change", function(e) {
+            selectedTerm = e.target.value;
+            if (curStudent) {
+                updatePage(curStudent.id, false);
+            }
+        });
 
         //
         //  Student selector
@@ -303,14 +388,15 @@
                 return;
             }
 
-            curStudent = student;
+            // Apply selected term to student data
+            curStudent = getStudentWithTerm(student, selectedTerm);
 
             updateQueryString(id, newPage);
-            updateTitle(student);
+            updateTitle(curStudent);
             updateLinks(id);
             
-            showSchedule(student);
-            updateMailto(student); // Relies on showSchedule
+            showSchedule(curStudent);
+            updateMailto(curStudent); // Relies on showSchedule
         }
 
         function updateQueryString(id, addHistory = true) {

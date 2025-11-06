@@ -38,7 +38,8 @@ export function createCalendar(calendarEl) {
         this.clearAllEvents();
 
         const events = [];
-        for (const course of student.schedule) {
+        const schedule = student.schedule || [];
+        for (const course of schedule) {
             const newEvents = createEventsForCourse(course);
             events.push(...newEvents);
         }

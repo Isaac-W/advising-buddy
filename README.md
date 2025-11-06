@@ -19,11 +19,20 @@ This is an example of the data parsed from the PDF file:
     "lastName": "Last",
     "fullName": "Student Middle Last",
     "email": "lastsm@dukes.jmu.edu",
-    "major": "Computer Science",
+    "major": "Computer Science", // TODO: May have multiple majors
     "aleks": 95,
-    "credits": 3,
-    "minor": "HON - Min",
-    "schedule": [  // List of enrolled courses
+    "credits": 3, // Credits in the current term (deprecated)
+    "minor": "HON - Min", // TODO: May have multiple minors
+    "terms": [
+        {
+            "id": "1258", // Fall 2025
+            "credits": 3,
+            "schedule": [
+                // Same format as "schedule" below, but only for this term
+            ]
+        }
+    ],
+    "schedule": [  // List of enrolled courses (deprecated)
         {
             "id": "CS149",
             "honors": false,

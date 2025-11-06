@@ -36,6 +36,12 @@
                         <a id="tools-link" class="nav-link" href="tools.html">Tools</a>
                     </li>
                 </ul>
+                <div class="d-flex">
+                    <select class="form-select form-select-sm" id="termSelect" data-state="selectedTerm"
+                        style="width: auto;">
+                        <option value="current">Current</option>
+                    </select>
+                </div>
             </div>
         </div>
     </nav>
@@ -106,6 +112,43 @@
         });
 
         //
+        //  Helper functions
+        //
+
+        // Normalize student data to always have terms
+        function normalizeStudentData(student) {
+            if (!student.terms || student.terms.length === 0) {
+                // Legacy format: wrap credits and schedule into a synthetic "current" term
+                return {
+                    ...student,
+                    terms: [{
+                        id: "current",
+                        credits: student.credits || 0,
+                        schedule: student.schedule || []
+                    }]
+                };
+            }
+            return student;
+        }
+
+        // Get all available term IDs from all students
+        function getAllTerms(students) {
+            const termSet = new Set();
+            students.forEach(student => {
+                const normalized = normalizeStudentData(student);
+                normalized.terms.forEach(term => termSet.add(term.id));
+            });
+            return Array.from(termSet).sort();
+        }
+
+        // Get term data for a specific student and term ID
+        function getTermData(student, termId) {
+            const normalized = normalizeStudentData(student);
+            const term = normalized.terms.find(t => t.id === termId);
+            return term || { id: termId, credits: 0, schedule: [] };
+        }
+
+        //
         //  Initialize state
         //
 
@@ -116,156 +159,192 @@
         }
 
         //
+        //  Populate term selector
+        //
+
+        const termSelect = document.getElementById("termSelect");
+        const availableTerms = getAllTerms(students);
+
+        // Clear default option and populate with actual terms
+        termSelect.innerHTML = "";
+        availableTerms.forEach(termId => {
+            const option = document.createElement("option");
+            option.value = termId;
+            option.textContent = termId === "current" ? "Current" : termId;
+            termSelect.appendChild(option);
+        });
+
+        // Set default to first term
+        let selectedTerm = availableTerms[0] || "current";
+        termSelect.value = selectedTerm;
+
+        // Add change listener
+        termSelect.addEventListener("change", function (e) {
+            selectedTerm = e.target.value;
+            stateful.setItem("selectedTerm", selectedTerm);
+            populateTable(selectedTerm);
+        });
+
+        //
         //  Populate table
         //
 
-        for (let student of students) {
-            const row = document.createElement("tr");
+        function populateTable(termId) {
+            const tbody = document.querySelector("#studentsTable tbody");
+            tbody.innerHTML = ""; // Clear existing rows
 
-            // STUDENT INFO
+            for (let student of students) {
+                const termData = getTermData(student, termId);
+                const row = document.createElement("tr");
 
-            const nameCell = document.createElement("td");
-            nameCell.innerHTML = `<a href='schedule.html?id=${student.id}'>${student.fullName}</a>`;
-            row.appendChild(nameCell);
+                // STUDENT INFO
 
-            const idCell = document.createElement("td");
-            idCell.textContent = student.id;
-            row.appendChild(idCell);
+                const nameCell = document.createElement("td");
+                nameCell.innerHTML = `<a href='schedule.html?id=${student.id}'>${student.fullName}</a>`;
+                row.appendChild(nameCell);
 
-            const programCell = document.createElement("td");
-            programCell.textContent = student.major;
-            if (student.minor) {
-                const minorText = document.createElement("br");
-                programCell.appendChild(minorText);
+                const idCell = document.createElement("td");
+                idCell.textContent = student.id;
+                row.appendChild(idCell);
 
-                const minorStrong = document.createElement("strong");
-                minorStrong.textContent = "Minor: ";
-                programCell.appendChild(minorStrong);
-                
-                const minorSpan = document.createElement("span");
-                minorSpan.textContent = student.minor;
-                programCell.appendChild(minorSpan);
-            }
-            row.appendChild(programCell);
+                const programCell = document.createElement("td");
+                programCell.textContent = student.major;
+                if (student.minor) {
+                    const minorText = document.createElement("br");
+                    programCell.appendChild(minorText);
 
-            // CREDITS CHECK
+                    const minorStrong = document.createElement("strong");
+                    minorStrong.textContent = "Minor: ";
+                    programCell.appendChild(minorStrong);
 
-            let courses = student.schedule.filter(c => c.full_id);
-            let totalCredits = 0;
-
-            // Count credits from unique courses
-            const seenCourses = new Set();
-            const uniqueCourses = [];
-            for (let course of courses) {
-                if (!seenCourses.has(course.id)) {
-                    seenCourses.add(course.id);
-                    totalCredits += course.credits;
-                    uniqueCourses.push(course);
+                    const minorSpan = document.createElement("span");
+                    minorSpan.textContent = student.minor;
+                    programCell.appendChild(minorSpan);
                 }
-            }
-            courses = uniqueCourses;
+                row.appendChild(programCell);
 
-            const numCreditsCell = document.createElement("td");
-            numCreditsCell.textContent = totalCredits;
-            row.appendChild(numCreditsCell);
+                // CREDITS CHECK
 
-            if (totalCredits === 0) {
-                row.classList.add("table-danger"); // Highlight WHOLE ROW
-            } else if (totalCredits < 12) {
-                numCreditsCell.classList.add("table-danger");
-            } else if (totalCredits < 14) {
-                numCreditsCell.classList.add("table-warning");
-            } else if (totalCredits >= 17) {
-                numCreditsCell.classList.add("table-primary");
-            }
+                let courses = termData.schedule.filter(c => c.full_id);
+                let totalCredits = 0;
 
-            // MAJOR CHECK
-
-            // Find specific cell with list of all course subjects starting with CS
-            const csCourses = courses.filter(c => c.id.startsWith("CS"));
-            courses = courses.filter(c => !csCourses.includes(c));
-
-            const csCell = document.createElement("td");
-            csCell.textContent = csCourses.length > 0 ? csCourses.map(c => c.full_id).join(", ") : "";
-            row.appendChild(csCell);
-
-            // Do it for MATH courses
-            const mathCourses = courses.filter(c => c.id.startsWith("MATH"));
-            courses = courses.filter(c => !mathCourses.includes(c));
-
-            const mathCell = document.createElement("td");
-            mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.full_id).join(", ") : "";
-            row.appendChild(mathCell);
-
-            if (csCell.textContent.includes("CS")) {
-                csCell.classList.add("table-success");
-            }
-
-            if (mathCell.textContent.includes("MATH155") || mathCell.textContent.includes("MATH199")) {
-                mathCell.classList.add("table-info");
-            }
-
-            if (csCourses.length === 0 && mathCourses.length === 0) {
-                csCell.classList.add("table-danger");
-                mathCell.classList.add("table-danger");
-            }
-
-            // MADISON FOUNDATIONS CHECK
-
-            // Find all [C1CT] courses
-            const ctCourses = courses.filter(c => genEdClassLookup[c.id] === "C1CT");
-            courses = courses.filter(c => !ctCourses.includes(c));
-
-            const ctCell = document.createElement("td");
-            ctCell.textContent = ctCourses.length > 0 ? ctCourses.map(c => c.full_id).join(", ") : "";
-            row.appendChild(ctCell);
-
-            // Find all [C1HC] courses
-            const commCourses = courses.filter(c => genEdClassLookup[c.id] === "C1HC");
-            courses = courses.filter(c => !commCourses.includes(c));
-
-            const commCell = document.createElement("td");
-            commCell.textContent = commCourses.length > 0 ? commCourses.map(c => c.full_id).join(", ") : "";
-            row.appendChild(commCell);
-
-            // Find all [C1W] courses
-            const writingCourses = courses.filter(c => genEdClassLookup[c.id] === "C1W");
-            courses = courses.filter(c => !writingCourses.includes(c));
-
-            const writingCell = document.createElement("td");
-            writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.full_id).join(", ") : "";
-            row.appendChild(writingCell);
-
-            if (ctCourses.length === 0 && commCourses.length === 0) {
-                ctCell.classList.add("table-danger");
-                commCell.classList.add("table-danger");
-
-                if (writingCourses.length === 0) {
-                    writingCell.classList.add("table-danger");
+                // Count credits from unique courses
+                const seenCourses = new Set();
+                const uniqueCourses = [];
+                for (let course of courses) {
+                    if (!seenCourses.has(course.id)) {
+                        seenCourses.add(course.id);
+                        totalCredits += course.credits;
+                        uniqueCourses.push(course);
+                    }
                 }
+                courses = uniqueCourses;
+
+                const numCreditsCell = document.createElement("td");
+                numCreditsCell.textContent = totalCredits;
+                row.appendChild(numCreditsCell);
+
+                if (totalCredits === 0) {
+                    row.classList.add("table-danger"); // Highlight WHOLE ROW
+                } else if (totalCredits < 12) {
+                    numCreditsCell.classList.add("table-danger");
+                } else if (totalCredits < 14) {
+                    numCreditsCell.classList.add("table-warning");
+                } else if (totalCredits >= 17) {
+                    numCreditsCell.classList.add("table-primary");
+                }
+
+                // MAJOR CHECK
+
+                // Find specific cell with list of all course subjects starting with CS
+                const csCourses = courses.filter(c => c.id.startsWith("CS"));
+                courses = courses.filter(c => !csCourses.includes(c));
+
+                const csCell = document.createElement("td");
+                csCell.textContent = csCourses.length > 0 ? csCourses.map(c => c.full_id).join(", ") : "";
+                row.appendChild(csCell);
+
+                // Do it for MATH courses
+                const mathCourses = courses.filter(c => c.id.startsWith("MATH"));
+                courses = courses.filter(c => !mathCourses.includes(c));
+
+                const mathCell = document.createElement("td");
+                mathCell.textContent = mathCourses.length > 0 ? mathCourses.map(c => c.full_id).join(", ") : "";
+                row.appendChild(mathCell);
+
+                if (csCell.textContent.includes("CS")) {
+                    csCell.classList.add("table-success");
+                }
+
+                if (mathCell.textContent.includes("MATH155") || mathCell.textContent.includes("MATH199")) {
+                    mathCell.classList.add("table-info");
+                }
+
+                if (csCourses.length === 0 && mathCourses.length === 0) {
+                    csCell.classList.add("table-danger");
+                    mathCell.classList.add("table-danger");
+                }
+
+                // MADISON FOUNDATIONS CHECK
+
+                // Find all [C1CT] courses
+                const ctCourses = courses.filter(c => genEdClassLookup[c.id] === "C1CT");
+                courses = courses.filter(c => !ctCourses.includes(c));
+
+                const ctCell = document.createElement("td");
+                ctCell.textContent = ctCourses.length > 0 ? ctCourses.map(c => c.full_id).join(", ") : "";
+                row.appendChild(ctCell);
+
+                // Find all [C1HC] courses
+                const commCourses = courses.filter(c => genEdClassLookup[c.id] === "C1HC");
+                courses = courses.filter(c => !commCourses.includes(c));
+
+                const commCell = document.createElement("td");
+                commCell.textContent = commCourses.length > 0 ? commCourses.map(c => c.full_id).join(", ") : "";
+                row.appendChild(commCell);
+
+                // Find all [C1W] courses
+                const writingCourses = courses.filter(c => genEdClassLookup[c.id] === "C1W");
+                courses = courses.filter(c => !writingCourses.includes(c));
+
+                const writingCell = document.createElement("td");
+                writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.full_id).join(", ") : "";
+                row.appendChild(writingCell);
+
+                if (ctCourses.length === 0 && commCourses.length === 0) {
+                    ctCell.classList.add("table-danger");
+                    commCell.classList.add("table-danger");
+
+                    if (writingCourses.length === 0) {
+                        writingCell.classList.add("table-danger");
+                    }
+                }
+
+                // OTHER CHECKS
+
+                // Find all GenEds
+                const genEdCourses = courses.filter(c => genEdClassLookup[c.id] !== undefined);
+                courses = courses.filter(c => !genEdCourses.includes(c));
+
+                const genEdCell = document.createElement("td");
+                genEdCell.textContent = genEdCourses.length > 0 ? genEdCourses.map(c => c.full_id).join(", ") : "";
+                row.appendChild(genEdCell);
+
+                // Remaining courses are electives
+                const electiveCell = document.createElement("td");
+                electiveCell.textContent = courses.length > 0 ? courses.map(c => c.full_id).join(", ") : "";
+                row.appendChild(electiveCell);
+
+                // Append the row to the table body
+                document.querySelector("#studentsTable tbody").appendChild(row);
             }
 
-            // OTHER CHECKS
-
-            // Find all GenEds
-            const genEdCourses = courses.filter(c => genEdClassLookup[c.id] !== undefined);
-            courses = courses.filter(c => !genEdCourses.includes(c));
-
-            const genEdCell = document.createElement("td");
-            genEdCell.textContent = genEdCourses.length > 0 ? genEdCourses.map(c => c.full_id).join(", ") : "";
-            row.appendChild(genEdCell);
-
-            // Remaining courses are electives
-            const electiveCell = document.createElement("td");
-            electiveCell.textContent = courses.length > 0 ? courses.map(c => c.full_id).join(", ") : "";
-            row.appendChild(electiveCell);
-
-            // Append the row to the table body
-            document.querySelector("#studentsTable tbody").appendChild(row);
+            // Show the table
+            document.getElementById("studentsTable").classList.remove("d-none");
         }
 
-        // Show the table
-        document.getElementById("studentsTable").classList.remove("d-none");
+        // Initial population
+        populateTable(selectedTerm);
     </script>
 </body>
 

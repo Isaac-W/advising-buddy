@@ -63,15 +63,18 @@ function processChecklist(student) {
 
 function getClassSet(student) {
     let classSet = new Set();
-    student.schedule.forEach(course => classSet.add(course.id));
+    const schedule = student.schedule || [];
+    schedule.forEach(course => classSet.add(course.id));
     return classSet;
 }
 
 function getTransferSet(student) {
     let combined = new Set();
-    student.transfer.forEach(course => combined.add(course.id));
+    const transfer = student.transfer || [];
+    transfer.forEach(course => combined.add(course.id));
     
-    for (const test of student.tests) {
+    const tests = student.tests || [];
+    for (const test of tests) {
         const courses = getExpectedCourses(test);
         courses.forEach(course => combined.add(course));
     }
