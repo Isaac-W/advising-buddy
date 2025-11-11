@@ -49,17 +49,26 @@
 
     <main class="container-fluid">
         <div class="bg-body-tertiary p-5 rounded">
-            <h1>First Year Advisees</h1>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="mb-0">First Year Advisees</h1>
+                <div>
+                    <button id="select-all-btn" class="btn btn-sm btn-outline-primary">Select All</button>
+                    <button id="copy-emails-btn" class="btn btn-sm btn-secondary" disabled>Copy Emails</button>
+                    <button id="email-selected-btn" class="btn btn-sm btn-primary" disabled>Email Selected (<span id="selected-count">0</span>)</button>
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="table table-light table-striped table-bordered mt-5 d-none" id="studentsTable">
                     <thead>
                         <tr>
+                            <th scope="colgroup"></th>
                             <th colspan="4" class="text-center" scope="colgroup">Info</th>
                             <th colspan="2" class="text-center" scope="colgroup">Major Courses</th>
                             <th colspan="3" class="text-center" scope="colgroup">Madison Foundations</th>
                             <th colspan="2" class="text-center" scope="colgroup">Other</th>
                         </tr>
                         <tr>
+                            <th scope="col"><input type="checkbox" id="select-all-checkbox" title="Select All"></th>
                             <th scope="col">Student</th>
                             <th scope="col">ID</th>
                             <th scope="col">Program</th>
@@ -203,6 +212,18 @@
             for (let student of students) {
                 const termData = getTermData(student, termId);
                 const row = document.createElement("tr");
+
+                // CHECKBOX
+
+                const checkboxCell = document.createElement("td");
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.classList.add("student-checkbox");
+                checkbox.dataset.studentId = student.id;
+                checkbox.dataset.studentEmail = student.email;
+                checkbox.dataset.studentName = student.fullName;
+                checkboxCell.appendChild(checkbox);
+                row.appendChild(checkboxCell);
 
                 // STUDENT INFO
 
@@ -352,6 +373,94 @@
 
         // Initial population
         populateTable(selectedTerm);
+
+        //
+        //  Email selected functionality
+        //
+
+        const selectAllBtn = document.getElementById("select-all-btn");
+        const selectAllCheckbox = document.getElementById("select-all-checkbox");
+        const emailSelectedBtn = document.getElementById("email-selected-btn");
+        const copyEmailsBtn = document.getElementById("copy-emails-btn");
+        const selectedCountSpan = document.getElementById("selected-count");
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            const checkedCount = document.querySelectorAll(".student-checkbox:checked").length;
+            selectedCountSpan.textContent = checkedCount;
+            emailSelectedBtn.disabled = checkedCount === 0;
+            copyEmailsBtn.disabled = checkedCount === 0;
+
+            // Update select all checkbox state
+            selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+        }
+
+        // Delegate checkbox change events
+        document.querySelector("#studentsTable tbody").addEventListener("change", function(e) {
+            if (e.target.classList.contains("student-checkbox")) {
+                updateSelectedCount();
+            }
+        });
+
+        // Select all button
+        selectAllBtn.addEventListener("click", function() {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            const allChecked = document.querySelectorAll(".student-checkbox:checked").length === checkboxes.length;
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+            updateSelectedCount();
+        });
+
+        // Select all checkbox in header
+        selectAllCheckbox.addEventListener("change", function() {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
+            updateSelectedCount();
+        });
+
+        // Copy emails button
+        copyEmailsBtn.addEventListener("click", function() {
+            const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
+            const emails = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentEmail);
+
+            if (emails.length === 0) {
+                toast("No students selected.", "error");
+                return;
+            }
+
+            const emailString = emails.join(", ");
+            navigator.clipboard.writeText(emailString)
+                .then(() => {
+                    toast(`Copied ${emails.length} email address${emails.length > 1 ? "es" : ""} to clipboard.`, "success");
+                })
+                .catch((err) => {
+                    console.error(err);
+                    toast("Failed to copy emails to clipboard.", "error");
+                });
+        });
+
+        // Email selected button
+        emailSelectedBtn.addEventListener("click", function() {
+            const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
+            const emails = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentEmail);
+            const names = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentName);
+
+            if (emails.length === 0) {
+                toast("No students selected.", "error");
+                return;
+            }
+
+            // Create mailto link with BCC
+            const subject = "From your Academic Advisor:";
+            const body = `Hi everyone,\n\n\n\nBest,\n`;
+            
+            // Use BCC to hide other recipients
+            const mailtoLink = `mailto:?bcc=${emails.join(",")}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            
+            window.location.href = mailtoLink;
+            
+            toast(`Opening email client for ${emails.length} student${emails.length > 1 ? "s" : ""}...`, "success");
+        });
     </script>
 </body>
 
