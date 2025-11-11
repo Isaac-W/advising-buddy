@@ -192,6 +192,9 @@
         termSelect.addEventListener("change", function (e) {
             selectedTerm = e.target.value;
             populateTable(selectedTerm);
+            
+            // Clear selections when term changes
+            updateSelectedCount();
         });
 
         //
@@ -200,6 +203,41 @@
 
         let state = new Stateful("details"); // Use same id as advisees.html to sync term selection
         state.initialize();
+
+        //
+        //  Email selected functionality - declare elements early
+        //
+
+        const selectAllBtn = document.getElementById("select-all-btn");
+        const selectAllCheckbox = document.getElementById("select-all-checkbox");
+        const emailSelectedBtn = document.getElementById("email-selected-btn");
+        const copyEmailsBtn = document.getElementById("copy-emails-btn");
+        const selectedCountSpan = document.getElementById("selected-count");
+
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
+            const checkedCount = selectedCheckboxes.length;
+            selectedCountSpan.textContent = checkedCount;
+            copyEmailsBtn.disabled = checkedCount === 0;
+
+            // Update select all checkbox state
+            selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
+            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+
+            // Update mailto link
+            if (checkedCount === 0) {
+                emailSelectedBtn.classList.add("disabled");
+                emailSelectedBtn.href = "#";
+            } else {
+                emailSelectedBtn.classList.remove("disabled");
+                const emails = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentEmail);
+                const subject = "From your Academic Advisor";
+                const body = `Hi everyone,\n\n\n\nBest,\n`;
+                const mailtoLink = `mailto:?bcc=${emails.join(",")}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                emailSelectedBtn.href = mailtoLink;
+            }
+        }
 
         //
         //  Populate table
@@ -369,45 +407,17 @@
 
             // Show the table
             document.getElementById("studentsTable").classList.remove("d-none");
+
+            // Update checkbox states after populating table
+            updateSelectedCount();
         }
 
         // Initial population
         populateTable(selectedTerm);
 
         //
-        //  Email selected functionality
+        //  Email selected button click handlers
         //
-
-        const selectAllBtn = document.getElementById("select-all-btn");
-        const selectAllCheckbox = document.getElementById("select-all-checkbox");
-        const emailSelectedBtn = document.getElementById("email-selected-btn");
-        const copyEmailsBtn = document.getElementById("copy-emails-btn");
-        const selectedCountSpan = document.getElementById("selected-count");
-
-        function updateSelectedCount() {
-            const checkboxes = document.querySelectorAll(".student-checkbox");
-            const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
-            const checkedCount = selectedCheckboxes.length;
-            selectedCountSpan.textContent = checkedCount;
-            copyEmailsBtn.disabled = checkedCount === 0;
-
-            // Update select all checkbox state
-            selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
-            selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
-
-            // Update mailto link
-            if (checkedCount === 0) {
-                emailSelectedBtn.classList.add("disabled");
-                emailSelectedBtn.href = "#";
-            } else {
-                emailSelectedBtn.classList.remove("disabled");
-                const emails = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentEmail);
-                const subject = "From your Academic Advisor";
-                const body = `Hi everyone,\n\n\n\nBest,\n`;
-                const mailtoLink = `mailto:?bcc=${emails.join(",")}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                emailSelectedBtn.href = mailtoLink;
-            }
-        }
 
         // Delegate checkbox change events
         document.querySelector("#studentsTable tbody").addEventListener("change", function(e) {
