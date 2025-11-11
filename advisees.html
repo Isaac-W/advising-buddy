@@ -54,7 +54,7 @@
                 <div>
                     <button id="select-all-btn" class="btn btn-sm btn-outline-primary">Select All</button>
                     <button id="copy-emails-btn" class="btn btn-sm btn-secondary" disabled>Copy Emails</button>
-                    <button id="email-selected-btn" class="btn btn-sm btn-primary" disabled>Email Selected (<span id="selected-count">0</span>)</button>
+                    <a id="email-selected-btn" href="#" class="btn btn-sm btn-primary disabled" target="_blank">Email Selected (<span id="selected-count">0</span>)</a>
                 </div>
             </div>
             <div class="table-responsive">
@@ -386,14 +386,27 @@
 
         function updateSelectedCount() {
             const checkboxes = document.querySelectorAll(".student-checkbox");
-            const checkedCount = document.querySelectorAll(".student-checkbox:checked").length;
+            const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
+            const checkedCount = selectedCheckboxes.length;
             selectedCountSpan.textContent = checkedCount;
-            emailSelectedBtn.disabled = checkedCount === 0;
             copyEmailsBtn.disabled = checkedCount === 0;
 
             // Update select all checkbox state
             selectAllCheckbox.checked = checkedCount === checkboxes.length && checkboxes.length > 0;
             selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+
+            // Update mailto link
+            if (checkedCount === 0) {
+                emailSelectedBtn.classList.add("disabled");
+                emailSelectedBtn.href = "#";
+            } else {
+                emailSelectedBtn.classList.remove("disabled");
+                const emails = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentEmail);
+                const subject = "From your Academic Advisor";
+                const body = `Hi everyone,\n\n\n\nBest,\n`;
+                const mailtoLink = `mailto:?bcc=${emails.join(",")}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                emailSelectedBtn.href = mailtoLink;
+            }
         }
 
         // Delegate checkbox change events
@@ -437,29 +450,6 @@
                     console.error(err);
                     toast("Failed to copy emails to clipboard.", "error");
                 });
-        });
-
-        // Email selected button
-        emailSelectedBtn.addEventListener("click", function() {
-            const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
-            const emails = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentEmail);
-            const names = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentName);
-
-            if (emails.length === 0) {
-                toast("No students selected.", "error");
-                return;
-            }
-
-            // Create mailto link with BCC
-            const subject = "From your Academic Advisor:";
-            const body = `Hi everyone,\n\n\n\nBest,\n`;
-            
-            // Use BCC to hide other recipients
-            const mailtoLink = `mailto:?bcc=${emails.join(",")}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-            
-            window.location.href = mailtoLink;
-            
-            toast(`Opening email client for ${emails.length} student${emails.length > 1 ? "s" : ""}...`, "success");
         });
     </script>
 </body>
