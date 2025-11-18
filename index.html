@@ -87,10 +87,10 @@
     <script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
 
     <script type="module">
-        import toast from "./scripts/toast.mjs";
-        import Stateful from "./scripts/stateful.mjs";
-        import { parsePdf } from "./scripts/fyaParser.mjs";
-        import { parseCrm } from "./scripts/crmParser.mjs";
+        import toast from "./scripts/util/toast.mjs";
+        import Stateful from "./scripts/util/stateful.mjs";
+        import { parsePdf } from "./scripts/parsers/fyaParser.mjs";
+        import { parseCrm } from "./scripts/parsers/crmParser.mjs";
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",

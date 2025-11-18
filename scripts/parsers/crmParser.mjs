@@ -1,4 +1,4 @@
-import { getCourseCredits } from "./courses.mjs";
+import { getCourseCredits } from "../data/courses.mjs";
 
 export async function parseCrm(file) {
     const rawData = await file.text();

@@ -1,5 +1,5 @@
-import { getExpectedCourses } from "./aptest.mjs";
-import { getSatisfiedGenEdsByArea } from "./geneds.mjs";
+import { getExpectedCourses } from "../data/aptest.mjs";
+import { getSatisfiedGenEdsByArea } from "../data/geneds.mjs";
 
 export function populateChecklist(checklistEl, student) {
     let checkItems = processChecklist(student);
