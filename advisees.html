@@ -209,31 +209,15 @@
         let selectedTerm = availableTerms[0] || "current";
         termSelect.value = selectedTerm;
 
-        // Add change listener
-        termSelect.addEventListener("change", function (e) {
-            selectedTerm = e.target.value;
-            populateTable(selectedTerm);
-
-            // Clear selections when term changes
-            updateSelectedCount();
-        });
-
         //
-        //  Initialize stateful (after term selector to sync)
-        //
-
-        let state = new Stateful("details"); // Use same id as advisees.html to sync term selection
-        state.initialize();
-
-        //
-        //  Email selected functionality - declare elements early ()
+        //  Email selected functionality - declare elements and functions early
         //
 
         const selectAllCheckbox = document.getElementById("select-all-checkbox");
         const emailSelectedBtn = document.getElementById("email-selected-btn");
         const copyEmailsBtn = document.getElementById("copy-emails-btn");
         const selectedCountSpan = document.getElementById("selected-count");
-
+        
         function updateSelectedCount() {
             const checkboxes = document.querySelectorAll(".student-checkbox");
             const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
@@ -258,6 +242,22 @@
                 emailSelectedBtn.href = mailtoLink;
             }
         }
+
+        // Add change listener
+        termSelect.addEventListener("change", function (e) {
+            selectedTerm = e.target.value;
+            populateTable(selectedTerm);
+
+            // Clear selections when term changes
+            updateSelectedCount();
+        });
+
+        //
+        //  Initialize stateful (after term selector to sync)
+        //
+
+        let state = new Stateful("details"); // Use same id as advisees.html to sync term selection
+        state.initialize();
 
         //
         //  Populate table
@@ -308,7 +308,7 @@
                         html: true,
                         placement: "top"
                     });
-                    
+
                     nameCell.appendChild(holdIndicator);
                 }
                 const nameLink = document.createElement("a");
@@ -465,8 +465,15 @@
         populateTable(selectedTerm);
 
         //
-        //  Bulk selection buttons
+        //  Email selected button click handlers
         //
+
+        // Delegate checkbox change events
+        document.querySelector("#studentsTable tbody").addEventListener("change", function (e) {
+            if (e.target.classList.contains("student-checkbox")) {
+                updateSelectedCount();
+            }
+        });
 
         // Select all button
         const selectAllBtn = document.getElementById("select-all-btn");
@@ -527,21 +534,10 @@
             const checkboxes = document.querySelectorAll(".student-checkbox");
             checkboxes.forEach(cb => {
                 const row = cb.closest("tr");
-                const holdIndicator = row.querySelector("span[title='Holds Present']");
+                const holdIndicator = row.querySelector("span[data-bs-toggle='popover']");
                 cb.checked = holdIndicator !== null;
             });
             updateSelectedCount();
-        });
-
-        //
-        //  Email selected button click handlers
-        //
-
-        // Delegate checkbox change events
-        document.querySelector("#studentsTable tbody").addEventListener("change", function (e) {
-            if (e.target.classList.contains("student-checkbox")) {
-                updateSelectedCount();
-            }
         });
 
         // Select all checkbox in header
