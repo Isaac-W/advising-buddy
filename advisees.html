@@ -52,15 +52,33 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h1 class="mb-0">First Year Advisees</h1>
                 <div>
-                    <button type="button" id="select-all-btn" class="btn btn-sm btn-outline-primary">Select All</button>
-                    <button type="button" id="copy-emails-btn" class="btn btn-sm btn-secondary" disabled>Copy
-                        Emails</button>
-                    <a id="email-selected-btn" href="#" class="btn btn-sm btn-primary disabled" target="_blank">Email
-                        Selected (<span id="selected-count">0</span>)</a>
+                    <div class="card card-body py-2 px-3">
+                        <div class="btn-toolbar gap-2 flex-wrap" role="toolbar" aria-label="Bulk actions">
+                            <span class="text-muted small me-2 d-flex align-items-center">Select:</span>
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Select buttons">
+                                <button type="button" id="select-all-btn" class="btn btn-outline-primary">All</button>
+                                <button type="button" id="select-none-btn" class="btn btn-outline-primary">None</button>
+                                <button type="button" id="select-under-12-btn" class="btn btn-outline-primary">&lt;12
+                                    credits</button>
+                                <button type="button" id="select-12-13-btn" class="btn btn-outline-primary">12-13
+                                    credits</button>
+                                <button type="button" id="select-over-17-btn" class="btn btn-outline-primary">17+
+                                    credits</button>
+                                <button type="button" id="select-holds-btn" class="btn btn-outline-primary">With
+                                    Holds</button>
+                            </div>
+                            <div class="btn-group" role="group" aria-label="Email">
+                                <button type="button" id="copy-emails-btn" class="btn btn-sm btn-secondary"
+                                    disabled>Copy Emails</button>
+                                <a id="email-selected-btn" href="#" class="btn btn-sm btn-primary disabled"
+                                    target="_blank">Email Selected (<span id="selected-count">0</span>)</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="table-responsive">
-                <table class="table table-light table-striped table-bordered mt-5 d-none" id="studentsTable">
+                <table class="table table-light table-striped table-bordered mt-2 d-none" id="studentsTable">
                     <thead>
                         <tr>
                             <th scope="colgroup" aria-label="Select"></th>
@@ -70,7 +88,8 @@
                             <th colspan="2" class="text-center" scope="colgroup">Other</th>
                         </tr>
                         <tr>
-                            <th scope="col" aria-label="Select all students"><input type="checkbox" id="select-all-checkbox" aria-label="Select all students"></th>
+                            <th scope="col" aria-label="Select all students"><input type="checkbox"
+                                    id="select-all-checkbox" aria-label="Select all students"></th>
                             <th scope="col">Student</th>
                             <th scope="col">ID</th>
                             <th scope="col">Program</th>
@@ -207,10 +226,9 @@
         state.initialize();
 
         //
-        //  Email selected functionality - declare elements early
+        //  Email selected functionality - declare elements early ()
         //
 
-        const selectAllBtn = document.getElementById("select-all-btn");
         const selectAllCheckbox = document.getElementById("select-all-checkbox");
         const emailSelectedBtn = document.getElementById("email-selected-btn");
         const copyEmailsBtn = document.getElementById("copy-emails-btn");
@@ -448,6 +466,75 @@
         populateTable(selectedTerm);
 
         //
+        //  Bulk selection buttons
+        //
+
+        // Select all button
+        const selectAllBtn = document.getElementById("select-all-btn");
+        selectAllBtn.addEventListener("click", function () {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            const allChecked = document.querySelectorAll(".student-checkbox:checked").length === checkboxes.length;
+            checkboxes.forEach(cb => cb.checked = !allChecked);
+            updateSelectedCount();
+        });
+
+        // Select none button
+        const selectNoneBtn = document.getElementById("select-none-btn");
+        selectNoneBtn.addEventListener("click", function () {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            checkboxes.forEach(cb => cb.checked = false);
+            updateSelectedCount();
+        });
+
+        // Select under 12 credits button
+        const selectUnder12Btn = document.getElementById("select-under-12-btn");
+        selectUnder12Btn.addEventListener("click", function () {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            checkboxes.forEach(cb => {
+                const row = cb.closest("tr");
+                const credits = parseInt(row.children[4].textContent, 10);
+                cb.checked = credits < 12;
+            });
+            updateSelectedCount();
+        });
+
+        // Select 12-13 credits button
+        const select1213Btn = document.getElementById("select-12-13-btn");
+        select1213Btn.addEventListener("click", function () {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            checkboxes.forEach(cb => {
+                const row = cb.closest("tr");
+                const credits = parseInt(row.children[4].textContent, 10);
+                cb.checked = credits >= 12 && credits <= 13;
+            });
+            updateSelectedCount();
+        });
+
+        // Select over 17 credits button
+        const selectOver17Btn = document.getElementById("select-over-17-btn");
+        selectOver17Btn.addEventListener("click", function () {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            checkboxes.forEach(cb => {
+                const row = cb.closest("tr");
+                const credits = parseInt(row.children[4].textContent, 10);
+                cb.checked = credits >= 17;
+            });
+            updateSelectedCount();
+        });
+
+        // Select with holds button
+        const selectHoldsBtn = document.getElementById("select-holds-btn");
+        selectHoldsBtn.addEventListener("click", function () {
+            const checkboxes = document.querySelectorAll(".student-checkbox");
+            checkboxes.forEach(cb => {
+                const row = cb.closest("tr");
+                const holdIndicator = row.querySelector("span[title='Holds Present']");
+                cb.checked = holdIndicator !== null;
+            });
+            updateSelectedCount();
+        });
+
+        //
         //  Email selected button click handlers
         //
 
@@ -456,14 +543,6 @@
             if (e.target.classList.contains("student-checkbox")) {
                 updateSelectedCount();
             }
-        });
-
-        // Select all button
-        selectAllBtn.addEventListener("click", function () {
-            const checkboxes = document.querySelectorAll(".student-checkbox");
-            const allChecked = document.querySelectorAll(".student-checkbox:checked").length === checkboxes.length;
-            checkboxes.forEach(cb => cb.checked = !allChecked);
-            updateSelectedCount();
         });
 
         // Select all checkbox in header
