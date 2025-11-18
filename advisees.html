@@ -37,7 +37,7 @@
                     </li>
                 </ul>
                 <div class="d-flex align-items-center">
-                    <span class="text-white me-2">Term:</span>
+                    <label for="termSelect" class="text-white me-2 mb-0">Term:</label>
                     <select class="form-select form-select-sm" id="termSelect" data-state="selectedTerm"
                         style="width: auto;">
                         <option value="current">Current</option>
@@ -63,14 +63,14 @@
                 <table class="table table-light table-striped table-bordered mt-5 d-none" id="studentsTable">
                     <thead>
                         <tr>
-                            <th scope="colgroup"></th>
+                            <th scope="colgroup" aria-label="Select"></th>
                             <th colspan="4" class="text-center" scope="colgroup">Info</th>
                             <th colspan="2" class="text-center" scope="colgroup">Major Courses</th>
                             <th colspan="3" class="text-center" scope="colgroup">Madison Foundations</th>
                             <th colspan="2" class="text-center" scope="colgroup">Other</th>
                         </tr>
                         <tr>
-                            <th scope="col"><input type="checkbox" id="select-all-checkbox" title="Select All"></th>
+                            <th scope="col" aria-label="Select all students"><input type="checkbox" id="select-all-checkbox" aria-label="Select all students"></th>
                             <th scope="col">Student</th>
                             <th scope="col">ID</th>
                             <th scope="col">Program</th>
@@ -93,7 +93,7 @@
     </main>
 
     <div class="modal fade" id="loadingModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        aria-labelledby="loadingModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -259,6 +259,7 @@
                 const checkbox = document.createElement("input");
                 checkbox.type = "checkbox";
                 checkbox.classList.add("student-checkbox");
+                checkbox.setAttribute("aria-label", `Select ${student.fullName}`);
                 checkbox.dataset.studentId = student.id;
                 checkbox.dataset.studentEmail = student.email;
                 checkbox.dataset.studentName = student.fullName;
