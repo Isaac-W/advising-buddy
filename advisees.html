@@ -295,7 +295,7 @@
                     holdIndicator.style.cursor = "pointer";
 
                     holdIndicator.setAttribute("data-bs-toggle", "popover");
-                    holdIndicator.setAttribute("data-bs-trigger", "click");
+                    holdIndicator.setAttribute("data-bs-trigger", "hover");
                     holdIndicator.setAttribute("tabindex", "0");
                     holdIndicator.setAttribute("role", "button");
 
@@ -308,8 +308,7 @@
                         html: true,
                         placement: "top"
                     });
-
-                    holdIndicator.title = "Holds Present"; // Need to do this late
+                    
                     nameCell.appendChild(holdIndicator);
                 }
                 const nameLink = document.createElement("a");
