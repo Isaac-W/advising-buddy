@@ -89,7 +89,8 @@ function parseStudentData(page) {
                 credits: parseCredits(text),
                 schedule: parseClasses(text)
             }
-        ]
+        ],
+        holds: [] // Does not support holds in FYA PDFs
     };
 
     [student.firstName, student.lastName] = parseName(text);

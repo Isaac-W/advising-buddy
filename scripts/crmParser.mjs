@@ -157,6 +157,18 @@ function getTotalCredits(formattedSchedule) {
     return totalCredits;
 }
 
+function formatHolds(holds) {
+    if (!holds || holds.length === 0) {
+        return []; // No holds
+    }
+
+    return holds.map(hold => ({
+        name: hold.name,
+        department: hold.department,
+        reason: hold.reason
+    }));
+}
+
 function formatStudentData(student) {
     const formatted = {
         id: student.studentId,
@@ -171,6 +183,7 @@ function formatStudentData(student) {
         aleks: findAleksScore(student.testScores),
         transfer: [], // TODO: Determine transfer credits
         tests: formatAPTests(student.testScores),
+        holds: formatHolds(student.academicHolds),
     };
 
     // Group classes by term

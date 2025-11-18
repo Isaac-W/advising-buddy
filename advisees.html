@@ -53,8 +53,10 @@
                 <h1 class="mb-0">First Year Advisees</h1>
                 <div>
                     <button type="button" id="select-all-btn" class="btn btn-sm btn-outline-primary">Select All</button>
-                    <button type="button" id="copy-emails-btn" class="btn btn-sm btn-secondary" disabled>Copy Emails</button>
-                    <a id="email-selected-btn" href="#" class="btn btn-sm btn-primary disabled" target="_blank">Email Selected (<span id="selected-count">0</span>)</a>
+                    <button type="button" id="copy-emails-btn" class="btn btn-sm btn-secondary" disabled>Copy
+                        Emails</button>
+                    <a id="email-selected-btn" href="#" class="btn btn-sm btn-primary disabled" target="_blank">Email
+                        Selected (<span id="selected-count">0</span>)</a>
                 </div>
             </div>
             <div class="table-responsive">
@@ -192,7 +194,7 @@
         termSelect.addEventListener("change", function (e) {
             selectedTerm = e.target.value;
             populateTable(selectedTerm);
-            
+
             // Clear selections when term changes
             updateSelectedCount();
         });
@@ -266,7 +268,35 @@
                 // STUDENT INFO
 
                 const nameCell = document.createElement("td");
-                nameCell.innerHTML = `<a href='schedule.html?id=${student.id}'>${student.fullName}</a>`;
+                const holds = student.holds || [];
+                if (holds.length > 0) {
+                    const holdIndicator = document.createElement("span");
+                    holdIndicator.textContent = "⛔";
+                    holdIndicator.classList.add("me-1");
+                    holdIndicator.style.cursor = "pointer";
+
+                    holdIndicator.setAttribute("data-bs-toggle", "popover");
+                    holdIndicator.setAttribute("data-bs-trigger", "click");
+                    holdIndicator.setAttribute("tabindex", "0");
+                    holdIndicator.setAttribute("role", "button");
+
+                    const holdDetails = holds.map(
+                        hold => `<strong>${hold.name}</strong> (${hold.department}): ${hold.reason}`
+                    ).join("<br>");
+                    holdIndicator.setAttribute("data-bs-content", holdDetails);
+
+                    const popover = new bootstrap.Popover(holdIndicator, {
+                        html: true,
+                        placement: "top"
+                    });
+
+                    holdIndicator.title = "Holds Present"; // Need to do this late
+                    nameCell.appendChild(holdIndicator);
+                }
+                const nameLink = document.createElement("a");
+                nameLink.href = `schedule.html?id=${student.id}`;
+                nameLink.textContent = student.fullName;
+                nameCell.appendChild(nameLink);
                 row.appendChild(nameCell);
 
                 const idCell = document.createElement("td");
@@ -377,14 +407,15 @@
                 writingCell.textContent = writingCourses.length > 0 ? writingCourses.map(c => c.full_id).join(", ") : "";
                 row.appendChild(writingCell);
 
-                if (ctCourses.length === 0 && commCourses.length === 0) {
-                    ctCell.classList.add("table-danger");
-                    commCell.classList.add("table-danger");
+                // Disabled highlighting for Madison Foundations for now
+                // if (ctCourses.length === 0 && commCourses.length === 0) {
+                //     ctCell.classList.add("table-danger");
+                //     commCell.classList.add("table-danger");
 
-                    if (writingCourses.length === 0) {
-                        writingCell.classList.add("table-danger");
-                    }
-                }
+                //     if (writingCourses.length === 0) {
+                //         writingCell.classList.add("table-danger");
+                //     }
+                // }
 
                 // OTHER CHECKS
 
@@ -420,14 +451,14 @@
         //
 
         // Delegate checkbox change events
-        document.querySelector("#studentsTable tbody").addEventListener("change", function(e) {
+        document.querySelector("#studentsTable tbody").addEventListener("change", function (e) {
             if (e.target.classList.contains("student-checkbox")) {
                 updateSelectedCount();
             }
         });
 
         // Select all button
-        selectAllBtn.addEventListener("click", function() {
+        selectAllBtn.addEventListener("click", function () {
             const checkboxes = document.querySelectorAll(".student-checkbox");
             const allChecked = document.querySelectorAll(".student-checkbox:checked").length === checkboxes.length;
             checkboxes.forEach(cb => cb.checked = !allChecked);
@@ -435,14 +466,14 @@
         });
 
         // Select all checkbox in header
-        selectAllCheckbox.addEventListener("change", function() {
+        selectAllCheckbox.addEventListener("change", function () {
             const checkboxes = document.querySelectorAll(".student-checkbox");
             checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
             updateSelectedCount();
         });
 
         // Copy emails button
-        copyEmailsBtn.addEventListener("click", function() {
+        copyEmailsBtn.addEventListener("click", function () {
             const selectedCheckboxes = document.querySelectorAll(".student-checkbox:checked");
             const emails = Array.from(selectedCheckboxes).map(cb => cb.dataset.studentEmail);
 

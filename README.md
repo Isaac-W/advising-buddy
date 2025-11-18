@@ -63,5 +63,12 @@ This is an example of the data parsed from the PDF file:
             "score": "5"
         }
     ],
+    "holds": [ // Optional: comes only from CRM
+        {
+            "name": "No initial registration",
+            "department": "STUDENT HEALTH SERV",
+            "reason": "Incomplete Health Records"
+        }
+    ]
 }
 ```
