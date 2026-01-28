@@ -1,5 +1,5 @@
-import { Calendar } from "https://cdn.skypack.dev/@fullcalendar/core@6.1.15";
-import timeGridPlugin from "https://cdn.skypack.dev/@fullcalendar/timegrid@6.1.15";
+import { Calendar } from "https://cdn.skypack.dev/@fullcalendar/core@6.1.20";
+import timeGridPlugin from "https://cdn.skypack.dev/@fullcalendar/timegrid@6.1.20";
 
 const startDate = Date.parse("2024-01-01");
 
