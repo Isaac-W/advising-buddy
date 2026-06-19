@@ -1,11 +1,9 @@
-import { Calendar } from "https://cdn.skypack.dev/@fullcalendar/core@6.1.20";
-import timeGridPlugin from "https://cdn.skypack.dev/@fullcalendar/timegrid@6.1.20";
+const { Calendar } = window.FullCalendar;
 
 const startDate = Date.parse("2024-01-01");
 
 export function createCalendar(calendarEl) {
     const calendar = new Calendar(calendarEl, {
-        plugins: [timeGridPlugin],
         initialView: 'timeGridWeek',
         editable: false,
         initialDate: startDate,
