@@ -116,7 +116,7 @@ function checkAleks(student) {
     let status = "☑️";
     let message = "";
 
-    if (student.aleks > 60 && student.aleks < 66) {
+    if (student.aleks < 56) {
         status = "👉";
         message = "Consider retaking ALEKS to get into CS 149";
     }
@@ -165,9 +165,15 @@ function checkCS(student, classes, transfer) {
     let current = "none";
     let message = "";
 
-    if (student.aleks < 66) {
-        status = "👉";
-        current = "Need to take MATH course instead of CS149";
+    if (student.aleks < 56) {
+        // Check for CS 101
+        if (classes.has("CS101")) {
+            status = "☑️";
+            current = "CS101";
+        } else {
+            status = "⚠️";
+            message = "Recommend taking CS101";
+        }
     } else { // Check for CS 149
         if (transfer.has("CS149")) { // Check transfer credit for CS 149
             let needed = findMissingCourses(["CS159", "CS227"], classes)[1];
@@ -212,7 +218,7 @@ function checkMath(student, classes, transfer) {
     needed = remaining;
 
     if (needed.length > 0) {
-        if (student.aleks < 66) {
+        if (student.aleks < 56) {
             status = "🚫";
             message = `Need to take ${needed.join(" + ")}`;
         } else {
