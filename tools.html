@@ -115,6 +115,7 @@
         import Stateful from "./scripts/util/stateful.mjs";
 
         import { PDFDocument, PageSizes } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
+        import JSZip from "https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm";
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
@@ -189,16 +190,24 @@
                 splitDocs.push(newDoc);
             }
 
+            const zip = new JSZip();
+            const baseName = pdfFile.name.replace(/\.pdf$/i, "");
+
             for (let i = 0; i < splitDocs.length; i++) {
                 const data = await splitDocs[i].save();
-                const blob = new Blob([data], { type: "application/pdf" });
-                const url = URL.createObjectURL(blob);
-
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${pdfFile.name.replace(".pdf", "")}-part${i + 1}.pdf`;
-                a.click();
+                zip.file(`${baseName}-part${i + 1}.pdf`, data);
             }
+
+            const zipData = await zip.generateAsync({ type: "uint8array" });
+            const zipBlob = new Blob([zipData], { type: "application/zip" });
+            const zipUrl = URL.createObjectURL(zipBlob);
+
+            const a = document.createElement("a");
+            a.href = zipUrl;
+            a.download = `${baseName}-split-${Date.now()}.zip`;
+            a.click();
+
+            setTimeout(() => URL.revokeObjectURL(zipUrl), 1000);
 
             // Delay in case the download is too fast
             setTimeout(() => {

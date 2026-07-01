@@ -217,6 +217,7 @@
                 <div class="bg-body-tertiary p-3 rounded">
                     <p class="lead">Batch:</p>
                     <button id="download-all-btn" class="btn btn-secondary" type="button">Download All (PDF)</button>
+                    <button id="download-all-zip-btn" class="btn btn-secondary" type="button">Download All (ZIP)</button>
                 </div>
             </div>
         </div>
@@ -273,6 +274,7 @@
 
         import html2canvas from "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm";
         import { PDFDocument, PageSizes } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
+        import JSZip from "https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm";
 
         const loadingModal = new bootstrap.Modal(document.getElementById("loadingModal"), {
             backdrop: "static",
@@ -525,6 +527,20 @@
         const downloadBtn = document.getElementById("download-btn");
         const printBtn = document.getElementById("print-btn");
         const downloadAllBtn = document.getElementById("download-all-btn");
+        const downloadAllZipBtn = document.getElementById("download-all-zip-btn");
+
+        function sanitizeFilename(name) {
+            return (name || "Student")
+                .replace(/[\\/:*?"<>|]/g, "")
+                .replace(/\s+/g, " ")
+                .trim()
+                .replace(/[. ]+$/, "");
+        }
+
+        function getScheduleFilename(student) {
+            const displayName = `${student.preferredName || ""} ${student.lastName || ""}`.trim() || student.fullName || "Student";
+            return `${sanitizeFilename(displayName)}'s Schedule.pdf`;
+        }
 
         async function getScheduleCanvas(width = 1600, padding = 24) {
             const scheduleEl = document.getElementById("schedule");
@@ -690,6 +706,58 @@
                     loadingModal.hide();
                 }, 1000);
             }, 300); // Delay to allow toast to show
+        });
+
+        downloadAllZipBtn.addEventListener("click", async () => {
+            if (!confirm("This may take a while!\n\nAre you sure you want to download all schedules as a ZIP?")) {
+                return;
+            }
+
+            downloadAllZipBtn.disabled = true;
+            loadingModal.show();
+            const prevId = studentSelect.value;
+
+            try {
+                toast("Generating individual PDFs...", "info");
+                const zip = new JSZip();
+
+                for (let i = 0; i < studentSelect.options.length; i++) {
+                    const studentId = studentSelect.options[i].value;
+                    updatePage(studentId, false);
+
+                    const pdfDoc = await PDFDocument.create();
+                    await makeSchedulePdf(pdfDoc);
+                    const pdfBytes = await pdfDoc.save();
+
+                    zip.file(getScheduleFilename(curStudent), pdfBytes);
+                }
+
+                toast("Saving ZIP...", "info");
+
+                const zipData = await zip.generateAsync({ type: "uint8array" });
+                const zipBlob = new Blob([zipData], { type: "application/zip" });
+                const zipUrl = URL.createObjectURL(zipBlob);
+
+                const a = document.createElement("a");
+                a.download = "all_schedules.zip";
+                a.href = zipUrl;
+                a.click();
+
+                setTimeout(() => URL.revokeObjectURL(zipUrl), 1000);
+                toast("Download complete.", "success");
+            } catch (err) {
+                console.error(err);
+                toast("Failed to generate ZIP download.", "error");
+            } finally {
+                studentSelect.value = prevId;
+                updatePage(prevId, false);
+                downloadAllZipBtn.disabled = false;
+                loadingModal.hide();
+
+                setTimeout(() => {
+                    loadingModal.hide();
+                }, 1000);
+            }
         });
 
         const copyEmailTextBtn = document.getElementById("copy-email-text");
