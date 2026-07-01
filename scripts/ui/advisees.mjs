@@ -45,7 +45,12 @@ function getAllTerms(students) {
         const normalized = normalizeStudentData(student);
         normalized.terms.forEach(term => termSet.add(term.id));
     });
-    return Array.from(termSet).sort();
+    return Array.from(termSet).sort((a, b) => {
+        if (a === "current" && b === "current") return 0;
+        if (a === "current") return 1;
+        if (b === "current") return -1;
+        return b.localeCompare(a, undefined, { numeric: true });
+    });
 }
 
 function getTermData(student, termId) {
@@ -311,8 +316,13 @@ export class AdviseesApp {
     constructor() {
         this.students = [];
         this.selectedTerm = "current";
+        this.studentDataSource = localStorage.getItem("studentDataSource") || "fya";
         this.elements = {};
         this.state = null;
+    }
+
+    getCurrentTermLabel() {
+        return this.studentDataSource === "crm" ? "Unknown" : "Current";
     }
 
     init() {
@@ -357,7 +367,7 @@ export class AdviseesApp {
         availableTerms.forEach(termId => {
             const option = document.createElement("option");
             option.value = termId;
-            option.textContent = termId === "current" ? "Current" : termId;
+            option.textContent = termId === "current" ? this.getCurrentTermLabel() : termId;
             this.elements.termSelect.appendChild(option);
         });
 

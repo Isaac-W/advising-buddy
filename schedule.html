@@ -186,8 +186,8 @@
                 </ul>
                 <div class="d-flex align-items-center">
                     <span class="text-white me-2">Term:</span>
-                    <select class="form-select form-select-sm" id="termSelect" data-state="selectedTerm" style="width: auto;">
-                        <option value="current">Current</option>
+                    <select class="form-select form-select-sm w-auto" id="termSelect" data-state="selectedTerm">
+                        <option value="current">Unknown</option>
                     </select>
                 </div>
             </div>
@@ -324,9 +324,14 @@
         //
 
         window.students = JSON.parse(localStorage.getItem("studentData") || "[]");
+        const studentDataSource = localStorage.getItem("studentDataSource") || "fya";
         if (students.length === 0) {
             toast("No student data found. Please upload student data.", "error");
             window.location.href = "index.html";
+        }
+
+        function getCurrentTermLabel() {
+            return studentDataSource === "crm" ? "Unknown" : "Current";
         }
 
         //
@@ -344,7 +349,12 @@
                 const normalized = normalizeStudentData(student);
                 normalized.terms.forEach(term => termSet.add(term.id));
             });
-            return Array.from(termSet).sort();
+            return Array.from(termSet).sort((a, b) => {
+                if (a === "current" && b === "current") return 0;
+                if (a === "current") return 1;
+                if (b === "current") return -1;
+                return b.localeCompare(a, undefined, { numeric: true });
+            });
         }
 
         const availableTerms = getAllTerms(students);
@@ -354,7 +364,7 @@
         availableTerms.forEach(termId => {
             const option = document.createElement("option");
             option.value = termId;
-            option.textContent = termId === "current" ? "Current" : termId;
+            option.textContent = termId === "current" ? getCurrentTermLabel() : termId;
             termSelect.appendChild(option);
         });
 

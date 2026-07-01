@@ -114,6 +114,8 @@
                 loadingModal.show();
                 parsePdf(document.getElementById("dataFile").files[0]).then((data) => {
                     localStorage.setItem("studentData", JSON.stringify(data));
+                    localStorage.setItem("studentDataSource", "fya");
+                    localStorage.removeItem("state-details");
                     toast("File uploaded successfully. Redirecting...", "success");
                     window.location.href = "advisees.html";
                 }).catch((err) => {
@@ -128,6 +130,8 @@
 
                 parseCrm(document.getElementById("dataFile").files[0]).then((data) => {
                     localStorage.setItem("studentData", JSON.stringify(data));
+                    localStorage.setItem("studentDataSource", "crm");
+                    localStorage.removeItem("state-details");
                     toast("File uploaded successfully. Redirecting...", "success");
                     window.location.href = "advisees.html";
                 }).catch((err) => {
