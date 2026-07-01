@@ -172,7 +172,7 @@ function renderEvent(arg) {
 // WALKABILITY
 
 const campusRegion = {
-    "bluestone": ["Alumnae", "Burruss", "Carrier", "Harrison", "Darcus", "Johnston", "Keezell", "Gabbin", "Miller", "Moody", "Roop", "Sheldon", "Wilson"],
+    "bluestone": ["Alumnae", "Burruss", "Carrier", "Harrison", "Darcus", "Johnston", "Keezell", "Gabbin", "Miller", "Moody", "Roop", "Sheldon", "Wilson", "Yates"],
     "w.bluestone": ["Anthony", "Cleveland", "Duke", "Forbes", "Music", "Grace"],
     "memorial": ["Memorial", "Studio", "International"],
     "n.campus": ["Health", "Madison", "Student"],
