@@ -8061,11 +8061,11 @@ export const allCourses = {
     },
     "JAPN101": {
         "description": "Elementary Japanese I",
-        "credits": "4.00"
+        "credits": "3.00"
     },
     "JAPN102": {
         "description": "Elementary Japanese II",
-        "credits": "4.00"
+        "credits": "3.00"
     },
     "JAPN111": {
         "description": "Intensive Japanese I",
@@ -9185,7 +9185,7 @@ export const allCourses = {
     },
     "MATH167": {
         "description": "Topics in Mathematics",
-        "credits": "1.00-3.00"
+        "credits": "2.00"
     },
     "MATH199": {
         "description": "Algebra/Precalculus Gateway",
