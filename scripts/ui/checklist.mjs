@@ -82,6 +82,7 @@ function getTransferSet(student) {
     return combined;
 }
 
+// Note: Courses are based on <= the score
 const mathPlacement = {
     55: ["MATH155"],
     65: ["MATH231", "MATH199"],
@@ -116,7 +117,10 @@ function checkAleks(student) {
     let status = "☑️";
     let message = "";
 
-    if (student.aleks < 56) {
+    // CS 149 eligibility requires ALEKS >= 56 or transfer credit for MATH 135/155/231/235
+    const cs149Eligibility = student.aleks >= 56 || student.transfer.some(course => ["MATH135", "MATH155", "MATH231", "MATH235"].includes(course.id));
+
+    if (!cs149Eligibility) {
         status = "👉";
         message = "Consider retaking ALEKS to get into CS 149";
     }
@@ -165,38 +169,45 @@ function checkCS(student, classes, transfer) {
     let current = "none";
     let message = "";
 
-    if (student.aleks < 56) {
+    const cs149Eligible = student.aleks >= 56 || student.transfer.some(course => ["MATH135", "MATH155", "MATH231", "MATH235"].includes(course.id));
+    const enrolledCS = [...classes].filter(course => course.startsWith("CS"));
+
+    // Always show all enrolled CS courses.
+    current = enrolledCS.length ? enrolledCS.join(", ") : "none";
+
+    // First check CS 149 eligibility based on ALEKS score and transfer credit
+    if (!cs149Eligible) {
         // Check for CS 101
         if (classes.has("CS101")) {
             status = "☑️";
-            current = "CS101";
         } else {
             status = "⚠️";
             message = "Recommend taking CS101";
         }
     } else { // Check for CS 149
         if (transfer.has("CS149")) { // Check transfer credit for CS 149
-            let needed = findMissingCourses(["CS159", "CS227"], classes)[1];
-            let taking = findMissingCourses(["CS149", "CS159", "CS227"], classes)[0];
-
-            current = taking.length ? taking.join(", ") : "none"; // Determine courses currently taking
+            let [advancedTaking, needed] = findMissingCourses(["CS159", "CS227"], classes);
 
             if (needed.length > 0) {
                 status = "⚠️";
-                message = `Need to take ${needed.join(" + ")}; has credit for CS149`;
+                message = `Need ${needed.join(" + ")}; has credit for CS149`;
             } else {
                 message = "Has credit for CS149";
             }
         } else if (classes.has("CS149")) {
             status = "☑️";
-            current = "CS149";
         } else if (classes.has("CS159") || classes.has("CS227")) {
-            status = "☑️";
-            current = [...classes.intersection(new Set(["CS159", "CS227"]))].join(", ");
+            console.log("May need to double-check transfer credit for CS149");
+            status = "👉";
             message = "Taking advanced CS courses";
         } else {
             status = "🚫";
             message = "Need to take CS149";
+
+            // Check if override may be needed based on transfer credit for MATH 135/155/231/235
+            if (student.aleks < 56) {
+                message += "; may need override";
+            }
         }
     }
 
@@ -214,8 +225,32 @@ function checkMath(student, classes, transfer) {
     let math = getMathPlacement(student.aleks);
 
     let needed = findMissingCourses(math, classes)[1];
-    let [transferred, remaining] = findMissingCourses(needed, transfer); // Check if has transfer credit for missing course(s)
+    let [satisfied, remaining] = findMissingCourses(needed, transfer); // Check if has transfer credit for missing course(s)
     needed = remaining;
+
+    // Special cases:
+    if (transfer.has("MATH135")) { // MATH 135 lets student into MATH 235
+        if (needed.includes("MATH155")) {
+            satisfied.push("MATH135");
+            needed = needed.filter(course => course !== "MATH155");
+
+            // Add MATH 235 to needed if don't have credit
+            if (!transfer.has("MATH235") && !classes.has("MATH235")) {
+                needed.push("MATH235");
+            }
+        }
+    } else if (transfer.has("MATH155")) { // MATH 155 lets student into MATH 231
+        if (needed.includes("MATH155")) {
+            satisfied.push("MATH155");
+            needed = needed.filter(course => course !== "MATH155");
+
+            // Add MATH 231 to needed if don't have credit
+            if (!transfer.has("MATH231") && !classes.has("MATH231")) {
+                needed.push("MATH231");
+            }
+        }
+    }
+
 
     if (needed.length > 0) {
         if (student.aleks < 56) {
@@ -226,8 +261,8 @@ function checkMath(student, classes, transfer) {
             message = `Recommend taking ${needed.join(" + ")}`;
         }
     } else {
-        if (transferred.length > 0) {
-            message = `Transfer credit for ${transferred.join(", ")}`;
+        if (satisfied.length > 0) {
+            message = `Transfer credit for ${satisfied.join(", ")}`;
         }
     }
 
