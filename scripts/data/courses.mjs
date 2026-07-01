@@ -13975,6 +13975,10 @@ export const allCourses = {
         "description": "Career and Academic Planning",
         "credits": "1.00"
     },
+    "UNST110": {
+        "description": "New Dukes 101",
+        "credits": "1.00"
+    },
     "UNST150": {
         "description": "Global Learning and Living: Madison International",
         "credits": "1.00-3.00"
