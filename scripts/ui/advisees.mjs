@@ -112,7 +112,7 @@ function createHoldIndicator(holds) {
     holdIndicator.classList.add("me-1");
     holdIndicator.style.cursor = "pointer";
     holdIndicator.setAttribute("data-bs-toggle", "popover");
-    holdIndicator.setAttribute("data-bs-trigger", "hover");
+    holdIndicator.setAttribute("data-bs-trigger", "manual");
     holdIndicator.setAttribute("tabindex", "0");
     holdIndicator.setAttribute("role", "button");
 
@@ -121,10 +121,52 @@ function createHoldIndicator(holds) {
     ).join("<br>");
     holdIndicator.setAttribute("data-bs-content", holdDetails);
 
-    new bootstrap.Popover(holdIndicator, {
+    const popover = new bootstrap.Popover(holdIndicator, {
+        trigger: "manual",
         html: true,
         placement: "top"
     });
+
+    let hideTimer;
+    const HIDE_DELAY_MS = 150;
+
+    const clearHideTimer = () => {
+        if (hideTimer) {
+            clearTimeout(hideTimer);
+            hideTimer = null;
+        }
+    };
+
+    const scheduleHide = () => {
+        clearHideTimer();
+        hideTimer = setTimeout(() => {
+            popover.hide();
+        }, HIDE_DELAY_MS);
+    };
+
+    const bindPopoverHoverHandlers = () => {
+        const popoverId = holdIndicator.getAttribute("aria-describedby");
+        const popoverElement = popoverId ? document.getElementById(popoverId) : null;
+
+        if (!popoverElement || popoverElement.dataset.holdHoverBound === "true") {
+            return;
+        }
+
+        popoverElement.dataset.holdHoverBound = "true";
+        popoverElement.addEventListener("mouseenter", clearHideTimer);
+        popoverElement.addEventListener("mouseleave", scheduleHide);
+    };
+
+    const showPopover = () => {
+        clearHideTimer();
+        popover.show();
+        bindPopoverHoverHandlers();
+    };
+
+    holdIndicator.addEventListener("mouseenter", showPopover);
+    holdIndicator.addEventListener("mouseleave", scheduleHide);
+    holdIndicator.addEventListener("focus", showPopover);
+    holdIndicator.addEventListener("blur", scheduleHide);
 
     return holdIndicator;
 }
